@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Foundation — Editor Chrome (complete)
+- Foundation — Data Layer (complete)
 
 ## Current Goal
 
-- Feature 05: TBD
+- Feature 06: TBD
 
 ## Completed
 
@@ -48,6 +48,15 @@ Update this file whenever the current phase, active feature, or implementation s
   - `app/editor/page.tsx` — renders `EditorHome` inside `EditorShell`.
   - TypeScript clean, production build passes.
 
+- Feature 05: Prisma Schema & Data Layer
+  - `@prisma/extension-accelerate` installed.
+  - `prisma.config.ts` updated to use multi-file schema (`schema: "prisma"` directory); continues to load `DATABASE_URL` from `.env.local`.
+  - `prisma/models/project.prisma` — `ProjectStatus` enum (`DRAFT`, `ARCHIVED`), `Project` model (ownerId, name, description?, status, canvasJsonPath?, timestamps, indexes on ownerId and createdAt), `ProjectCollaborator` model (projectId FK with cascade delete, email, createdAt, unique on projectId+email, indexes on email and projectId+createdAt).
+  - `lib/prisma.ts` — cached singleton branching on `DATABASE_URL`: `prisma+postgres://` → `new PrismaClient({ accelerateUrl }).$extends(withAccelerate())`, otherwise → `PrismaPg` adapter with `pg.Pool`.
+  - Migration `20260516084410_init` applied to Prisma Postgres at `db.prisma.io`.
+  - Client regenerated to `app/generated/prisma/`; import via `@/app/generated/prisma/client`.
+  - TypeScript clean, production build passes.
+
 ## In Progress
 
 - None.
@@ -74,3 +83,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - `@/lib/utils` path alias resolves via `tsconfig.json` `@/*` → `./*`.
 - Next.js 16 uses `proxy.ts` (not `middleware.ts`) at the project root.
 - `@clerk/ui` is the bundled Clerk UI package (themes, components). Version 1.11.0 installed.
+- Prisma 7 generator provider is `"prisma-client"` (not `"prisma-client-js"`). Generated client lands in `app/generated/prisma/`. Import from `@/app/generated/prisma/client` (no index.ts barrel).
+- `prisma.config.ts` uses `config({ path: ".env.local" })` from `dotenv`; `schema: "prisma"` (directory) enables multi-file schema — all `.prisma` files in `prisma/` are merged.
+- `PrismaClientOptions` in Prisma 7 is a discriminated union: `{ adapter }` for direct pg or `{ accelerateUrl }` for Accelerate — cannot call `new PrismaClient()` with no arguments.
+- Multi-file schema: `prisma/schema.prisma` holds generator + datasource; model files go in `prisma/models/*.prisma`.
