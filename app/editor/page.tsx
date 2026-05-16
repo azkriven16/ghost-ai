@@ -1,11 +1,13 @@
 import { EditorShell } from "@/components/editor/editor-shell"
+import { EditorHome } from "@/components/editor/editor-home"
+import { getProjectsForUser } from "@/lib/projects"
 
-export default function EditorPage() {
+export default async function EditorPage() {
+  const { owned, shared } = await getProjectsForUser()
+
   return (
-    <EditorShell>
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-copy-muted">Canvas goes here</p>
-      </div>
+    <EditorShell ownedProjects={owned} sharedProjects={shared}>
+      <EditorHome />
     </EditorShell>
   )
 }
