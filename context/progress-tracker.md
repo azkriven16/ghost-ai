@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Foundation — Auth (complete)
+- Foundation — Editor Chrome (complete)
 
 ## Current Goal
 
-- Feature 04: TBD
+- Feature 05: TBD
 
 ## Completed
 
@@ -38,13 +38,23 @@ Update this file whenever the current phase, active feature, or implementation s
   - `@clerk/ui` installed; env vars added: `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`, `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`.
   - TypeScript clean, production build passes.
 
+- Feature 04: Project Dialogs & Editor Home
+  - `hooks/use-project-dialogs.ts` — hook managing all dialog state (open/close), form state (name, slug, newName), and loading state for Create / Rename / Delete dialogs. Includes `MOCK_PROJECTS` and `toSlug()` utility.
+  - `components/editor/editor-context.tsx` — minimal React context exposing `openCreate` to children of `EditorShell`.
+  - `components/editor/project-dialogs.tsx` — `CreateProjectDialog` (name input + live slug preview), `RenameProjectDialog` (prefilled input, auto-focus, Enter submits), `DeleteProjectDialog` (destructive confirm, no input).
+  - `components/editor/editor-home.tsx` — home screen: heading, description, New Project button wired to `openCreate` via context.
+  - `components/editor/editor-shell.tsx` — uses `useProjectDialogs`, provides `EditorContext`, passes project list + handlers to sidebar, renders all three dialogs.
+  - `components/editor/project-sidebar.tsx` — project item list with hover-reveal rename/delete actions for owned projects; shared projects show no actions; mobile backdrop scrim closes sidebar on tap.
+  - `app/editor/page.tsx` — renders `EditorHome` inside `EditorShell`.
+  - TypeScript clean, production build passes.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Feature 04: TBD
+- Feature 05: TBD
 
 ## Open Questions
 
