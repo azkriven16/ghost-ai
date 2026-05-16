@@ -9,6 +9,9 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+# Claude Code
+.agents/
+skills-lock.json
 
 # testing
 /coverage
