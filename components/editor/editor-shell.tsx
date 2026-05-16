@@ -4,14 +4,20 @@ import { useState } from "react"
 import { EditorNavbar } from "./editor-navbar"
 import { ProjectSidebar } from "./project-sidebar"
 import { EditorContext } from "./editor-context"
-import { useProjectDialogs, MOCK_PROJECTS } from "@/hooks/use-project-dialogs"
+import { useProjectActions, type Project } from "@/hooks/use-project-actions"
 import {
   CreateProjectDialog,
   RenameProjectDialog,
   DeleteProjectDialog,
 } from "./project-dialogs"
 
-export function EditorShell({ children }: { children: React.ReactNode }) {
+interface EditorShellProps {
+  children: React.ReactNode
+  ownedProjects: Project[]
+  sharedProjects: Project[]
+}
+
+export function EditorShell({ children, ownedProjects, sharedProjects }: EditorShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   const {
@@ -30,7 +36,7 @@ export function EditorShell({ children }: { children: React.ReactNode }) {
     handleCreate,
     handleRename,
     handleDelete,
-  } = useProjectDialogs()
+  } = useProjectActions()
 
   return (
     <EditorContext.Provider value={{ openCreate }}>
@@ -41,7 +47,7 @@ export function EditorShell({ children }: { children: React.ReactNode }) {
         />
         <ProjectSidebar
           isOpen={isSidebarOpen}
-          projects={MOCK_PROJECTS}
+          projects={[...ownedProjects, ...sharedProjects]}
           onClose={() => setIsSidebarOpen(false)}
           onNewProject={openCreate}
           onRenameProject={openRename}
@@ -53,7 +59,7 @@ export function EditorShell({ children }: { children: React.ReactNode }) {
       <CreateProjectDialog
         isOpen={createDialog.isOpen}
         name={createDialog.name}
-        slug={createDialog.slug}
+        roomId={createDialog.roomId}
         isLoading={isLoading}
         onClose={closeCreate}
         onNameChange={setCreateName}

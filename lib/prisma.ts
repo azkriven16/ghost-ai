@@ -3,11 +3,13 @@ import { withAccelerate } from "@prisma/extension-accelerate";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
-const createPrismaClient = () => {
+const createPrismaClient = (): PrismaClient => {
   const url = process.env.DATABASE_URL ?? "";
 
   if (url.startsWith("prisma+postgres://")) {
-    return new PrismaClient({ accelerateUrl: url }).$extends(withAccelerate());
+    return new PrismaClient({ accelerateUrl: url }).$extends(
+      withAccelerate()
+    ) as unknown as PrismaClient;
   }
 
   const pool = new Pool({ connectionString: url });

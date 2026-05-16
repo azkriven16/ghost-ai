@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Foundation — Data Layer (complete)
+- Foundation — UI Wired to API (complete)
 
 ## Current Goal
 
-- Feature 06: TBD
+- Feature 08: TBD
 
 ## Completed
 
@@ -57,13 +57,30 @@ Update this file whenever the current phase, active feature, or implementation s
   - Client regenerated to `app/generated/prisma/`; import via `@/app/generated/prisma/client`.
   - TypeScript clean, production build passes.
 
+- Feature 06: Project APIs
+  - `app/api/projects/route.ts` — `GET /api/projects` (list owner's projects, ordered by `createdAt desc`), `POST /api/projects` (create; defaults missing name to `Untitled Project`).
+  - `app/api/projects/[projectId]/route.ts` — `PATCH /api/projects/[projectId]` (rename; 400 if name missing), `DELETE /api/projects/[projectId]` (returns 204).
+  - Auth: `auth()` from `@clerk/nextjs/server`; unauthenticated → 401; non-owner mutations → 403.
+  - `lib/prisma.ts` — return type annotated as `PrismaClient` with `as unknown as PrismaClient` cast on the Accelerate branch to resolve union type incompatibility.
+  - TypeScript clean, production build passes.
+
+- Feature 07: Wire Editor Home to Project APIs
+  - `lib/projects.ts` — `getProjectsForUser()` server helper: fetches owned projects by `ownerId` and shared projects via `ProjectCollaborator.email` (resolved from `currentUser()`).
+  - `hooks/use-project-actions.ts` — replaces `useProjectDialogs`; manages dialog state + real API mutations. Create calls `POST /api/projects`, navigates to `/editor/[id]`; rename calls `PATCH`, refreshes; delete calls `DELETE`, redirects to `/editor` if active workspace else refreshes. Create dialog generates a `shortSuffix` on open for room ID preview.
+  - `components/editor/project-dialogs.tsx` — `CreateProjectDialog` prop `slug` → `roomId`; preview label updated to "Room ID".
+  - `components/editor/project-sidebar.tsx` — imports `Project` from `use-project-actions`.
+  - `components/editor/editor-shell.tsx` — accepts `ownedProjects` and `sharedProjects` as props; uses `useProjectActions`; passes combined list to sidebar.
+  - `app/editor/page.tsx` — async server component; calls `getProjectsForUser()` and passes lists to `EditorShell`.
+  - `hooks/use-project-dialogs.ts` — deleted (replaced by `use-project-actions`).
+  - TypeScript clean, production build passes.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Feature 06: TBD
+- Feature 08: TBD
 
 ## Open Questions
 

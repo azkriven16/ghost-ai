@@ -4,7 +4,7 @@ import { X, Plus, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { type Project } from "@/hooks/use-project-dialogs"
+import { type Project } from "@/hooks/use-project-actions"
 
 interface ProjectSidebarProps {
   isOpen: boolean

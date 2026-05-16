@@ -15,7 +15,7 @@ import {
 interface CreateProjectDialogProps {
   isOpen: boolean
   name: string
-  slug: string
+  roomId: string
   isLoading: boolean
   onClose: () => void
   onNameChange: (name: string) => void
@@ -25,7 +25,7 @@ interface CreateProjectDialogProps {
 export function CreateProjectDialog({
   isOpen,
   name,
-  slug,
+  roomId,
   isLoading,
   onClose,
   onNameChange,
@@ -50,9 +50,9 @@ export function CreateProjectDialog({
             onKeyDown={(e) => e.key === "Enter" && name.trim() && onConfirm()}
             className="border-surface-border bg-subtle text-copy-primary placeholder:text-copy-faint"
           />
-          {slug && (
+          {roomId && (
             <p className="text-xs text-copy-muted">
-              Slug: <span className="font-mono text-copy-secondary">{slug}</span>
+              Room ID: <span className="font-mono text-copy-secondary">{roomId}</span>
             </p>
           )}
         </div>
