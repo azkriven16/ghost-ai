@@ -4,7 +4,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Foundation — Design System (complete)
+- Foundation — Editor Chrome (complete)
 
 ## Current Goal
 
@@ -20,13 +20,19 @@ Update this file whenever the current phase, active feature, or implementation s
   - `lib/utils.ts` created with `cn()` helper.
   - TypeScript and production build pass clean.
 
+- Feature 02: Editor Chrome
+  - `components/editor/editor-navbar.tsx` — `h-12` fixed-height navbar, left sidebar toggle (PanelLeftOpen/PanelLeftClose), dark bg with `border-b border-surface-border`, left/center/right sections.
+  - `components/editor/project-sidebar.tsx` — fixed overlay (`fixed left-0 top-12 z-40`), slides in from left via `translate-x`, `isOpen`/`onClose` props, Projects header + close button, Tabs (My Projects / Shared) with empty placeholders, full-width New Project button pinned to bottom.
+  - Dialog pattern: shadcn Dialog ships with DialogTitle/DialogDescription/DialogFooter — ready for future dialogs without additional files.
+  - TypeScript clean, production build passes.
+
 ## In Progress
 
 - None yet.
 
 ## Next Up
 
-- Add the next planned feature unit here.
+- Feature 03: Auth (Clerk sign-in, route protection)
 
 ## Open Questions
 
