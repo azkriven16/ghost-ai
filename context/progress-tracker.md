@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Foundation — Editor Chrome (complete)
+- Foundation — Auth (complete)
 
 ## Current Goal
 
-- Define the immediate implementation goal here.
+- Feature 04: TBD
 
 ## Completed
 
@@ -26,13 +26,25 @@ Update this file whenever the current phase, active feature, or implementation s
   - Dialog pattern: shadcn Dialog ships with DialogTitle/DialogDescription/DialogFooter — ready for future dialogs without additional files.
   - TypeScript clean, production build passes.
 
+- Feature 03: Auth
+  - `proxy.ts` at root — Next.js 16 renamed `middleware.ts` to `proxy.ts`; exports `proxy` (from `clerkMiddleware`) and `config.matcher`. All routes protected except `/sign-in(.*)` and `/sign-up(.*)`.
+  - `app/layout.tsx` — `ClerkProvider` wraps the root layout with `@clerk/ui/themes` dark theme (`theme: dark`) and CSS variable overrides on `variables` (no hardcoded colors).
+  - `app/page.tsx` — auth-aware redirect: authenticated → `/editor`, unauthenticated → `/sign-in`.
+  - `app/editor/page.tsx` — editor route with `EditorShell` (canvas placeholder).
+  - `app/(auth)/layout.tsx` — two-panel auth layout: left panel (logo, tagline, text-only feature list) hidden on small screens; right panel centered Clerk form. No gradients, no scroll-heavy layouts.
+  - `app/(auth)/sign-in/[[...sign-in]]/page.tsx` — Clerk `<SignIn />` component.
+  - `app/(auth)/sign-up/[[...sign-up]]/page.tsx` — Clerk `<SignUp />` component.
+  - `components/editor/editor-navbar.tsx` — `UserButton` added to right section.
+  - `@clerk/ui` installed; env vars added: `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`, `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`.
+  - TypeScript clean, production build passes.
+
 ## In Progress
 
-- None yet.
+- None.
 
 ## Next Up
 
-- Feature 03: Auth (Clerk sign-in, route protection)
+- Feature 04: TBD
 
 ## Open Questions
 
@@ -43,8 +55,12 @@ Update this file whenever the current phase, active feature, or implementation s
 - shadcn/ui CLI generates components into `components/ui/` — files are not modified post-install.
 - Tailwind v4 `@theme inline` in `globals.css` maps both Ghost AI tokens (`--color-base`, `--color-copy-primary`, etc.) and shadcn's expected tokens (`--color-primary`, `--color-muted`, etc.) to Tailwind utilities.
 - Dark-only: no `@media (prefers-color-scheme)` block — all values set once in `:root`.
+- Next.js 16 renames `middleware.ts` → `proxy.ts` and the export from `middleware` → `proxy`. `clerkMiddleware` is exported as `proxy` const.
+- Clerk appearance uses `theme:` (not `baseTheme:`) and `variables:` keys from `@clerk/ui/themes` / `@clerk/ui/internal` types.
 
 ## Session Notes
 
 - Project is using Next.js 16 + Tailwind v4 + pnpm.
 - `@/lib/utils` path alias resolves via `tsconfig.json` `@/*` → `./*`.
+- Next.js 16 uses `proxy.ts` (not `middleware.ts`) at the project root.
+- `@clerk/ui` is the bundled Clerk UI package (themes, components). Version 1.11.0 installed.
