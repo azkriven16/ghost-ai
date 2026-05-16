@@ -16,7 +16,8 @@ export const MOCK_PROJECTS: Project[] = [
 ]
 
 function toSlug(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+  const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+  return slug || "untitled"
 }
 
 interface CreateDialogState {
@@ -58,7 +59,7 @@ export function useProjectDialogs() {
     projectName: "",
   })
 
-  const [isLoading, setIsLoading] = useState(false)
+  const isLoading = false
 
   const openCreate = useCallback(() => {
     setCreateDialog({ isOpen: true, name: "", slug: "" })
@@ -97,24 +98,16 @@ export function useProjectDialogs() {
     setDeleteDialog({ isOpen: false, projectId: null, projectName: "" })
   }, [])
 
+  // isLoading is wired for future async persistence — stubs close immediately
   const handleCreate = useCallback(() => {
-    setIsLoading(true)
-    // No persistence yet — just close
-    setIsLoading(false)
     closeCreate()
   }, [closeCreate])
 
   const handleRename = useCallback(() => {
-    setIsLoading(true)
-    // No persistence yet — just close
-    setIsLoading(false)
     closeRename()
   }, [closeRename])
 
   const handleDelete = useCallback(() => {
-    setIsLoading(true)
-    // No persistence yet — just close
-    setIsLoading(false)
     closeDelete()
   }, [closeDelete])
 
