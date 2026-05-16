@@ -1,19 +1,24 @@
 # Progress Tracker
 
-Update this file after every meaningful implementation
-change.
+Update this file whenever the current phase, active feature, or implementation state changes.
 
 ## Current Phase
 
-- [e.g. Not started / In progress / Complete]
+- Foundation — Design System (complete)
 
 ## Current Goal
 
-- [What you are building right now]
+- Define the immediate implementation goal here.
 
 ## Completed
 
-- None yet.
+- Feature 01: Design System
+  - `globals.css` replaced with dark-only theme: all Ghost AI design tokens as CSS custom properties, mapped to Tailwind utilities via `@theme inline`. No light mode.
+  - shadcn/ui installed and configured (`components.json`).
+  - shadcn components added: Button, Card, Dialog, Input, Tabs, Textarea, ScrollArea (`components/ui/`).
+  - `lucide-react`, `clsx`, `tailwind-merge`, `class-variance-authority` installed.
+  - `lib/utils.ts` created with `cn()` helper.
+  - TypeScript and production build pass clean.
 
 ## In Progress
 
@@ -21,17 +26,19 @@ change.
 
 ## Next Up
 
-- [First unit to build]
+- Add the next planned feature unit here.
 
 ## Open Questions
 
-- [Any unresolved product or technical decisions]
+- Add unresolved product or implementation questions here.
 
 ## Architecture Decisions
 
-- [Decisions made that affect the system design or
-  data model — include why the decision was made]
+- shadcn/ui CLI generates components into `components/ui/` — files are not modified post-install.
+- Tailwind v4 `@theme inline` in `globals.css` maps both Ghost AI tokens (`--color-base`, `--color-copy-primary`, etc.) and shadcn's expected tokens (`--color-primary`, `--color-muted`, etc.) to Tailwind utilities.
+- Dark-only: no `@media (prefers-color-scheme)` block — all values set once in `:root`.
 
 ## Session Notes
 
-- [Context needed to resume work in the next session]
+- Project is using Next.js 16 + Tailwind v4 + pnpm.
+- `@/lib/utils` path alias resolves via `tsconfig.json` `@/*` → `./*`.
