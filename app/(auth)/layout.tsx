@@ -47,7 +47,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </ul>
         </div>
 
-        <p className="text-xs text-copy-faint">&copy; {new Date().getFullYear()} Ghost AI</p>
+        <p className="text-xs text-copy-faint" suppressHydrationWarning>&copy; {new Date().getFullYear()} Ghost AI</p>
       </div>
 
       {/* Right panel — Clerk form */}
