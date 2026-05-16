@@ -12,8 +12,10 @@ interface ProjectSidebarProps {
 export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
   return (
     <div
-      className={`fixed left-0 top-12 z-40 flex h-[calc(100vh-3rem)] w-72 flex-col border-r border-surface-border bg-surface/90 backdrop-blur-sm transition-transform duration-200 ease-in-out ${
-        isOpen ? "translate-x-0" : "-translate-x-full"
+      aria-hidden={!isOpen}
+      inert={!isOpen || undefined}
+      className={`fixed left-0 top-12 z-40 flex h-[calc(100dvh-3rem)] w-72 flex-col border-r border-surface-border bg-surface/90 backdrop-blur-sm transition-transform duration-200 ease-in-out ${
+        isOpen ? "translate-x-0 pointer-events-auto" : "-translate-x-full pointer-events-none"
       }`}
     >
       <div className="flex shrink-0 items-center justify-between border-b border-surface-border px-4 py-3">
