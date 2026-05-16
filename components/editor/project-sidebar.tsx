@@ -117,7 +117,7 @@ function ProjectItem({ project, onRename, onDelete }: ProjectItemProps) {
     <li className="group flex items-center justify-between rounded-xl px-3 py-2 hover:bg-elevated">
       <span className="truncate text-sm text-copy-primary">{project.name}</span>
       {project.isOwned && (
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button
             variant="ghost"
             size="icon"

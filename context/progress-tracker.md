@@ -54,7 +54,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Feature 05: TBD
+- Feature 06: TBD
 
 ## Open Questions
 
