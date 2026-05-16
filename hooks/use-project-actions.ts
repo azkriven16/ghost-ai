@@ -89,10 +89,15 @@ export function useProjectActions(activeProjectId?: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: createDialog.name.trim() }),
       })
-      if (!res.ok) return
+      if (!res.ok) {
+        console.error("[useProjectActions] create failed", res.status)
+        return
+      }
       const data = await res.json()
       closeCreate()
       router.push(`/editor/${data.project.id}`)
+    } catch (e) {
+      console.error("[useProjectActions] create error", e)
     } finally {
       setIsLoading(false)
     }
@@ -125,9 +130,14 @@ export function useProjectActions(activeProjectId?: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newName.trim() }),
       })
-      if (!res.ok) return
+      if (!res.ok) {
+        console.error("[useProjectActions] rename failed", res.status)
+        return
+      }
       closeRename()
       router.refresh()
+    } catch (e) {
+      console.error("[useProjectActions] rename error", e)
     } finally {
       setIsLoading(false)
     }
@@ -147,13 +157,18 @@ export function useProjectActions(activeProjectId?: string) {
     setIsLoading(true)
     try {
       const res = await fetch(`/api/projects/${projectId}`, { method: "DELETE" })
-      if (!res.ok) return
+      if (!res.ok) {
+        console.error("[useProjectActions] delete failed", res.status)
+        return
+      }
       closeDelete()
       if (activeProjectId === projectId) {
         router.push("/editor")
       } else {
         router.refresh()
       }
+    } catch (e) {
+      console.error("[useProjectActions] delete error", e)
     } finally {
       setIsLoading(false)
     }

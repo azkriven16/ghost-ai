@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { Prisma } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
@@ -11,10 +12,17 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   const { projectId } = await params;
-  const body = await request.json().catch(() => ({}));
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid request body" }, { status: 400 });
+  }
+  const parsed = body as Record<string, unknown>;
   const name =
-    typeof body?.name === "string" && body.name.trim()
-      ? body.name.trim()
+    typeof parsed?.name === "string" && parsed.name.trim()
+      ? parsed.name.trim()
       : null;
 
   if (!name) {
@@ -34,20 +42,29 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const updated = await prisma.project.update({
-    where: { id: projectId },
-    data: { name },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-
-  return Response.json({ project: updated });
+  try {
+    const updated = await prisma.project.update({
+      where: { id: projectId },
+      data: { name },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return Response.json({ project: updated });
+  } catch (e) {
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === "P2025"
+    ) {
+      return Response.json({ error: "Not found" }, { status: 404 });
+    }
+    throw e;
+  }
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
@@ -72,7 +89,16 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await prisma.project.delete({ where: { id: projectId } });
-
-  return new Response(null, { status: 204 });
+  try {
+    await prisma.project.delete({ where: { id: projectId } });
+    return new Response(null, { status: 204 });
+  } catch (e) {
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === "P2025"
+    ) {
+      return Response.json({ error: "Not found" }, { status: 404 });
+    }
+    throw e;
+  }
 }

@@ -23,7 +23,9 @@ export async function getProjectsForUser(): Promise<{
     currentUser(),
   ]);
 
-  const email = user?.emailAddresses[0]?.emailAddress;
+  const email = user?.emailAddresses.find(
+    (e) => e.id === user.primaryEmailAddressId
+  )?.emailAddress;
 
   const collaboratorRows = email
     ? await prisma.projectCollaborator.findMany({
