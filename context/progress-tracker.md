@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Feature 13: TBD
+- Feature 14: TBD
 
 ## Completed
 
@@ -111,13 +111,18 @@ Update this file whenever the current phase, active feature, or implementation s
   - `components/editor/canvas.tsx` — `onInit` stores React Flow instance ref; `onDragOver` enables copy drop effect; `onDrop` parses payload, calls `rfInstance.screenToFlowPosition`, centers node on cursor, generates ID `${shape}-${Date.now()}-${counter}`, calls `onNodesChange([{ type: "add", item }])`; `nodeTypes` registers `CanvasNodeRenderer`; `ShapePanel` rendered inside `ReactFlow`.
   - TypeScript clean, production build passes.
 
+- Feature 13: Node Shape Rendering & Drag Preview
+  - `components/editor/canvas-node.tsx` — replaced placeholder with shape-aware rendering: CSS shapes (`rectangle` with `border-radius:6px`, `pill`/`circle` with `border-radius:9999px`); SVG shapes (`diamond`, `hexagon` flat-top, `cylinder`) using `viewBox="0 0 100 100" preserveAspectRatio="none"`. Borders at `${color}99` at rest, full color when selected; selection ring via `boxShadow` on CSS shapes.
+  - `components/editor/shape-panel.tsx` — added `createDragPreview()` and `getSvgPreviewMarkup()` helpers; `onDragStart` calls `event.dataTransfer.setDragImage` with a scaled (75%) shape preview element appended to `document.body`, removed via `requestAnimationFrame` after capture. `getComputedStyle` resolves `--color-surface` at runtime for the preview background.
+  - TypeScript clean, production build passes.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Feature 13: TBD
+- Feature 14: TBD
 
 ## Open Questions
 

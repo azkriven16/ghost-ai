@@ -18,10 +18,10 @@ import "@xyflow/react/dist/style.css"
 const nodeTypes = { canvasNode: CanvasNodeRenderer }
 const edgeTypes = {}
 
-let nodeCounter = 0
+const VALID_SHAPES: CanvasShape[] = ["rectangle", "circle", "diamond", "pill", "cylinder", "hexagon"]
 
 function makeNode(shape: CanvasShape, width: number, height: number, x: number, y: number): CanvasNode {
-  const id = `${shape}-${Date.now()}-${++nodeCounter}`
+  const id = `${shape}-${crypto.randomUUID()}`
   return {
     id,
     type: "canvasNode",
@@ -74,6 +74,14 @@ export function Canvas() {
       } catch {
         return
       }
+
+      if (
+        !VALID_SHAPES.includes(payload.shape) ||
+        !Number.isFinite(payload.width) ||
+        !Number.isFinite(payload.height) ||
+        payload.width <= 0 ||
+        payload.height <= 0
+      ) return
 
       const { x, y } = rfInstance.current.screenToFlowPosition({
         x: event.clientX,

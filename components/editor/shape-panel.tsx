@@ -34,6 +34,60 @@ const SHAPES: ShapeConfig[] = [
   { shape: "hexagon",   label: "Hexagon",   icon: <Hexagon size={18} />,            width: 120, height: 120 },
 ]
 
+function getSvgPreviewMarkup(shape: CanvasShape, w: number, h: number, bg: string, stroke: string): string {
+  const sw = 2
+  const open = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 100 100" preserveAspectRatio="none">`
+  if (shape === "diamond") {
+    return `${open}<polygon points="50,4 96,50 50,96 4,50" fill="${bg}" stroke="${stroke}" stroke-width="${sw}"/></svg>`
+  }
+  if (shape === "hexagon") {
+    return `${open}<polygon points="95,50 72,90 28,90 5,50 28,10 72,10" fill="${bg}" stroke="${stroke}" stroke-width="${sw}"/></svg>`
+  }
+  if (shape === "cylinder") {
+    return `${open}
+      <rect x="2" y="14" width="96" height="72" fill="${bg}"/>
+      <ellipse cx="50" cy="86" rx="48" ry="12" fill="${bg}"/>
+      <ellipse cx="50" cy="14" rx="48" ry="12" fill="${bg}"/>
+      <line x1="2" y1="14" x2="2" y2="86" stroke="${stroke}" stroke-width="${sw}"/>
+      <line x1="98" y1="14" x2="98" y2="86" stroke="${stroke}" stroke-width="${sw}"/>
+      <ellipse cx="50" cy="86" rx="48" ry="12" fill="none" stroke="${stroke}" stroke-width="${sw}"/>
+      <ellipse cx="50" cy="14" rx="48" ry="12" fill="none" stroke="${stroke}" stroke-width="${sw}"/>
+    </svg>`
+  }
+  return `${open}</svg>`
+}
+
+function createDragPreview(shape: CanvasShape, width: number, height: number): HTMLElement {
+  const scale = 0.75
+  const w = Math.round(width * scale)
+  const h = Math.round(height * scale)
+
+  const bg = getComputedStyle(document.documentElement).getPropertyValue("--color-surface").trim() || "#111114"
+  const stroke = "#6366f1"
+
+  const el = document.createElement("div")
+  el.style.cssText = `position:fixed;top:-${h + 20}px;left:-${w + 20}px;width:${w}px;height:${h}px;opacity:0.8;pointer-events:none;box-sizing:border-box;`
+
+  if (shape === "rectangle") {
+    el.style.border = `2px solid ${stroke}`
+    el.style.borderRadius = "6px"
+    el.style.background = bg
+  } else if (shape === "pill") {
+    el.style.border = `2px solid ${stroke}`
+    el.style.borderRadius = "9999px"
+    el.style.background = bg
+  } else if (shape === "circle") {
+    el.style.border = `2px solid ${stroke}`
+    el.style.borderRadius = "50%"
+    el.style.background = bg
+  } else {
+    el.style.background = "transparent"
+    el.innerHTML = getSvgPreviewMarkup(shape, w, h, bg, stroke)
+  }
+
+  return el
+}
+
 interface ShapeButtonProps extends ShapeConfig {
   onAdd: (shape: CanvasShape, width: number, height: number) => void
 }
@@ -43,6 +97,13 @@ function ShapeButton({ shape, label, icon, width, height, onAdd }: ShapeButtonPr
     const payload: DragPayload = { shape, width, height }
     event.dataTransfer.setData("application/ghost-shape", JSON.stringify(payload))
     event.dataTransfer.effectAllowed = "copy"
+
+    const preview = createDragPreview(shape, width, height)
+    document.body.appendChild(preview)
+    event.dataTransfer.setDragImage(preview, Math.round((width * 0.75) / 2), Math.round((height * 0.75) / 2))
+    requestAnimationFrame(() => {
+      if (preview.parentNode) preview.parentNode.removeChild(preview)
+    })
   }
 
   return (
@@ -50,6 +111,7 @@ function ShapeButton({ shape, label, icon, width, height, onAdd }: ShapeButtonPr
       draggable
       onDragStart={onDragStart}
       onClick={() => onAdd(shape, width, height)}
+      aria-label={label}
       title={label}
       className="flex h-9 w-9 cursor-grab items-center justify-center rounded-lg text-copy-secondary transition-colors hover:bg-accent-dim hover:text-copy-primary active:cursor-grabbing"
     >
