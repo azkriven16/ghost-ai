@@ -38,9 +38,14 @@ export function EditorNavbar({
         </Button>
       </div>
 
-      <div className="flex flex-1 items-center justify-center">
+      <div className="flex min-w-0 flex-1 items-center justify-center px-2">
         {projectName && (
-          <span className="text-sm font-medium text-copy-primary">{projectName}</span>
+          <span
+            className="max-w-full truncate text-sm font-medium text-copy-primary"
+            title={projectName}
+          >
+            {projectName}
+          </span>
         )}
       </div>
 

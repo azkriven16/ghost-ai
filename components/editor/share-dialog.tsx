@@ -38,7 +38,6 @@ function CollaboratorAvatar({ profile }: { profile: CollaboratorProfile }) {
         className="h-8 w-8 rounded-full object-cover shrink-0"
         onError={(e) => {
           e.currentTarget.onerror = null;
-          const initial = label[0]?.toUpperCase() ?? "?";
           const fallbackSrc = `https://ui-avatars.com/api/?name=${encodeURIComponent(label)}&background=random&size=32`;
           e.currentTarget.src = fallbackSrc;
         }}
@@ -160,20 +159,13 @@ export function ShareDialog({
 
   const handleCopyLink = useCallback(async () => {
     const url = `${window.location.origin}/editor/${projectId}`;
-    if (!navigator.clipboard) {
-      console.error("Clipboard API not available");
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      console.error("Failed to copy to clipboard");
-      // Fallback: try execCommand
+
+    const copyWithFallback = () => {
       try {
         const textarea = document.createElement("textarea");
         textarea.value = url;
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
         document.body.appendChild(textarea);
         textarea.select();
         document.execCommand("copy");
@@ -183,6 +175,18 @@ export function ShareDialog({
       } catch {
         console.error("Fallback copy method also failed");
       }
+    };
+
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        copyWithFallback();
+      }
+    } else {
+      copyWithFallback();
     }
   }, [projectId]);
 

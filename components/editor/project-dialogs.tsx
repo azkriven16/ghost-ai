@@ -58,7 +58,7 @@ export function CreateProjectDialog({
             </p>
           )}
           {createError ? (
-            <p className="text-sm text-destructive">{createError}</p>
+            <p role="alert" aria-live="assertive" className="text-sm text-destructive">{createError}</p>
           ) : null}
         </div>
 
@@ -123,7 +123,7 @@ export function RenameProjectDialog({
           className="border-surface-border bg-subtle text-copy-primary placeholder:text-copy-faint"
         />
         {renameError ? (
-          <p className="mt-3 text-sm text-destructive">{renameError}</p>
+          <p role="alert" aria-live="assertive" className="mt-3 text-sm text-destructive">{renameError}</p>
         ) : null}
 
         <DialogFooter>
@@ -165,7 +165,7 @@ export function DeleteProjectDialog({
             &ldquo;{projectName}&rdquo; will be permanently deleted. This cannot be undone.
           </DialogDescription>
           {deleteError ? (
-            <p className="mt-3 text-sm text-destructive">{deleteError}</p>
+            <p role="alert" aria-live="assertive" className="mt-3 text-sm text-destructive">{deleteError}</p>
           ) : null}
         </DialogHeader>
 

@@ -3,6 +3,15 @@
 import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 
+interface CreateProjectResponse { project: { id: string } }
+
+function isCreateProjectResponse(data: unknown): data is CreateProjectResponse {
+  if (!data || typeof data !== "object") return false
+  const project = (data as { project?: unknown }).project
+  if (!project || typeof project !== "object") return false
+  return typeof (project as { id?: unknown }).id === "string"
+}
+
 export interface Project {
   id: string
   name: string
@@ -116,11 +125,7 @@ export function useProjectActions(activeProjectId?: string) {
         return
       }
 
-      if (!data || typeof data !== "object" ||
-          !("project" in data) ||
-          typeof (data as any).project !== "object" ||
-          !("id" in (data as any).project) ||
-          typeof (data as any).project.id !== "string") {
+      if (!isCreateProjectResponse(data)) {
         const message = "Create failed: unexpected server response."
         setCreateError(message)
         console.error("[useProjectActions] create invalid response", data)
@@ -128,7 +133,7 @@ export function useProjectActions(activeProjectId?: string) {
       }
 
       closeCreate()
-      router.push(`/editor/${(data as any).project.id}`)
+      router.push(`/editor/${data.project.id}`)
     } catch (e) {
       const message = `Create failed: ${e instanceof Error ? e.message : String(e)}`
       setCreateError(message)

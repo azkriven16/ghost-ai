@@ -130,6 +130,7 @@ function ProjectItem({ project, isActive, onRename, onDelete }: ProjectItemProps
     >
       <Link
         href={`/editor/${project.id}`}
+        aria-current={isActive ? "page" : undefined}
         className={`flex min-w-0 flex-1 truncate px-3 py-2 text-sm ${
           isActive ? "font-medium text-brand" : "text-copy-primary"
         }`}
