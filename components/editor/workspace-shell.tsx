@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { EditorNavbar } from "./editor-navbar"
 import { ProjectSidebar } from "./project-sidebar"
 import { EditorContext } from "./editor-context"
@@ -12,6 +12,9 @@ import {
 } from "./project-dialogs"
 import { ShareDialog } from "./share-dialog"
 import { CanvasProvider } from "./canvas-provider"
+import { StarterTemplatesModal } from "./starter-templates-modal"
+import type { CanvasHandle } from "./canvas"
+import type { CanvasTemplate } from "./starter-templates"
 
 interface WorkspaceShellProps {
   projectId: string
@@ -29,6 +32,9 @@ export function WorkspaceShell({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false)
   const [isShareOpen, setIsShareOpen] = useState(false)
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
+
+  const canvasRef = useRef<CanvasHandle>(null)
 
   const {
     createDialog,
@@ -51,6 +57,10 @@ export function WorkspaceShell({
     handleDelete,
   } = useProjectActions(projectId)
 
+  function handleTemplateImport(template: CanvasTemplate) {
+    canvasRef.current?.importTemplate(template.nodes, template.edges)
+  }
+
   return (
     <EditorContext.Provider value={{ openCreate }}>
       <div className="flex h-dvh flex-col">
@@ -61,6 +71,7 @@ export function WorkspaceShell({
           isAiSidebarOpen={isAiSidebarOpen}
           onToggleAiSidebar={() => setIsAiSidebarOpen((v) => !v)}
           onShare={() => setIsShareOpen(true)}
+          onOpenTemplates={() => setIsTemplatesOpen(true)}
         />
         <ProjectSidebar
           isOpen={isSidebarOpen}
@@ -73,7 +84,7 @@ export function WorkspaceShell({
         />
         <div className="relative flex flex-1 min-h-0">
           <div className="flex flex-1 min-h-0">
-            <CanvasProvider roomId={projectId} />
+            <CanvasProvider roomId={projectId} canvasRef={canvasRef} />
           </div>
 
           {/* AI sidebar */}
@@ -129,6 +140,11 @@ export function WorkspaceShell({
         projectId={projectId}
         projectName={projectName}
         onClose={() => setIsShareOpen(false)}
+      />
+      <StarterTemplatesModal
+        isOpen={isTemplatesOpen}
+        onClose={() => setIsTemplatesOpen(false)}
+        onImport={handleTemplateImport}
       />
     </EditorContext.Provider>
   )

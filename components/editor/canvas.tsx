@@ -1,22 +1,35 @@
 "use client"
 
-import { useCallback, useRef } from "react"
+import { useCallback, useRef, forwardRef, useImperativeHandle } from "react"
 import {
   ReactFlow,
   Background,
   MiniMap,
   BackgroundVariant,
+  MarkerType,
   type ReactFlowInstance,
+  type Connection,
 } from "@xyflow/react"
 import { useLiveblocksFlow } from "@liveblocks/react-flow"
 import { CanvasNodeRenderer } from "./canvas-node"
+import { CanvasEdgeRenderer } from "./canvas-edge"
+import { CanvasControls } from "./canvas-controls"
 import { ShapePanel, type DragPayload } from "./shape-panel"
 import type { CanvasNode, CanvasEdge, CanvasShape } from "@/types/canvas"
 
 import "@xyflow/react/dist/style.css"
 
+export interface CanvasHandle {
+  importTemplate: (nodes: CanvasNode[], edges: CanvasEdge[]) => void
+}
+
 const nodeTypes = { canvasNode: CanvasNodeRenderer }
-const edgeTypes = {}
+const edgeTypes = { canvasEdge: CanvasEdgeRenderer }
+
+const defaultEdgeOptions = {
+  type: "canvasEdge",
+  markerEnd: { type: MarkerType.ArrowClosed, color: "#f8fafc" },
+}
 
 const VALID_SHAPES: CanvasShape[] = ["rectangle", "circle", "diamond", "pill", "cylinder", "hexagon"]
 
@@ -31,12 +44,26 @@ function makeNode(shape: CanvasShape, width: number, height: number, x: number, 
   }
 }
 
-export function Canvas() {
+export const Canvas = forwardRef<CanvasHandle>(function Canvas(_, ref) {
   const rfInstance = useRef<ReactFlowInstance<CanvasNode, CanvasEdge> | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onDelete } =
+  const { nodes, edges, onNodesChange, onEdgesChange, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({ suspense: true })
+
+  useImperativeHandle(ref, () => ({
+    importTemplate(templateNodes, templateEdges) {
+      onNodesChange([
+        ...nodes.map((n) => ({ type: "remove" as const, id: n.id })),
+        ...templateNodes.map((n) => ({ type: "add" as const, item: n })),
+      ])
+      onEdgesChange([
+        ...edges.map((e) => ({ type: "remove" as const, id: e.id })),
+        ...templateEdges.map((e) => ({ type: "add" as const, item: e })),
+      ])
+      setTimeout(() => rfInstance.current?.fitView({ duration: 400 }), 50)
+    },
+  }), [nodes, edges, onNodesChange, onEdgesChange])
 
   const getCanvasCenter = useCallback(() => {
     if (!rfInstance.current || !wrapperRef.current) return { x: 0, y: 0 }
@@ -53,6 +80,24 @@ export function Canvas() {
       onNodesChange([{ type: "add", item: makeNode(shape, width, height, x, y) }])
     },
     [getCanvasCenter, onNodesChange]
+  )
+
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      onEdgesChange([{
+        type: "add",
+        item: {
+          id: `edge-${crypto.randomUUID()}`,
+          type: "canvasEdge",
+          source: connection.source,
+          target: connection.target,
+          sourceHandle: connection.sourceHandle ?? null,
+          targetHandle: connection.targetHandle ?? null,
+          data: {},
+        },
+      }])
+    },
+    [onEdgesChange]
   )
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -100,18 +145,20 @@ export function Canvas() {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
+        onConnect={handleConnect}
         onDelete={onDelete}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        defaultEdgeOptions={defaultEdgeOptions}
         connectOnClick={false}
         fitView
         onInit={(instance) => { rfInstance.current = instance }}
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         <MiniMap />
+        <CanvasControls />
         <ShapePanel onAdd={handleAddNode} />
       </ReactFlow>
     </div>
   )
-}
+})
