@@ -15,6 +15,8 @@ export interface DragPayload {
   shape: CanvasShape
   width: number
   height: number
+  dragOffsetX: number
+  dragOffsetY: number
 }
 
 interface ShapeConfig {
@@ -94,13 +96,17 @@ interface ShapeButtonProps extends ShapeConfig {
 
 function ShapeButton({ shape, label, icon, width, height, onAdd }: ShapeButtonProps) {
   function onDragStart(event: React.DragEvent<HTMLButtonElement>) {
-    const payload: DragPayload = { shape, width, height }
+    // Hotspot is top-left of the scaled preview; the canvas drop handler adds
+    // half the node dimensions to center the node at the drop cursor position.
+    const dragOffsetX = 0
+    const dragOffsetY = 0
+    const payload: DragPayload = { shape, width, height, dragOffsetX, dragOffsetY }
     event.dataTransfer.setData("application/ghost-shape", JSON.stringify(payload))
     event.dataTransfer.effectAllowed = "copy"
 
     const preview = createDragPreview(shape, width, height)
     document.body.appendChild(preview)
-    event.dataTransfer.setDragImage(preview, Math.round((width * 0.75) / 2), Math.round((height * 0.75) / 2))
+    event.dataTransfer.setDragImage(preview, dragOffsetX, dragOffsetY)
     requestAnimationFrame(() => {
       if (preview.parentNode) preview.parentNode.removeChild(preview)
     })

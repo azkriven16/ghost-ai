@@ -13,7 +13,10 @@ const createPrismaClient = (): PrismaClient => {
     ) as unknown as PrismaClient;
   }
 
-  const pool = new Pool({ connectionString: url });
+  // pg will emit a security warning for sslmode=prefer/require/verify-ca in
+  // future versions. Normalize to verify-full, which is the current behavior.
+  const safeUrl = url.replace(/sslmode=(prefer|require|verify-ca)/, "sslmode=verify-full")
+  const pool = new Pool({ connectionString: safeUrl });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 };

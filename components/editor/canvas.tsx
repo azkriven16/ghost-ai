@@ -1,27 +1,37 @@
 "use client"
 
-import { useCallback, useRef, forwardRef, useImperativeHandle } from "react"
+import { useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
+import { useRoom, useUpdateMyPresence } from "@liveblocks/react"
 import {
   ReactFlow,
   Background,
   MiniMap,
   BackgroundVariant,
   MarkerType,
+  ConnectionMode,
   type ReactFlowInstance,
   type Connection,
 } from "@xyflow/react"
-import { useRoom } from "@liveblocks/react"
 import { useLiveblocksFlow } from "@liveblocks/react-flow"
 import { CanvasNodeRenderer } from "./canvas-node"
 import { CanvasEdgeRenderer } from "./canvas-edge"
 import { CanvasControls } from "./canvas-controls"
 import { ShapePanel, type DragPayload } from "./shape-panel"
+import { LiveCursors } from "./live-cursors"
+import { PresenceAvatars } from "./presence-avatars"
+import { useCanvasAutosave, type SaveStatus } from "@/hooks/use-canvas-autosave"
 import type { CanvasNode, CanvasEdge, CanvasShape } from "@/types/canvas"
 
 import "@xyflow/react/dist/style.css"
 
 export interface CanvasHandle {
   importTemplate: (nodes: CanvasNode[], edges: CanvasEdge[]) => void
+  save: () => void
+}
+
+interface CanvasProps {
+  projectId: string
+  onSaveStatusChange: (status: SaveStatus) => void
 }
 
 const nodeTypes = { canvasNode: CanvasNodeRenderer }
@@ -34,6 +44,11 @@ const defaultEdgeOptions = {
 
 const VALID_SHAPES: CanvasShape[] = ["rectangle", "circle", "diamond", "pill", "cylinder", "hexagon"]
 
+interface SavedCanvas {
+  nodes: CanvasNode[]
+  edges: CanvasEdge[]
+}
+
 function makeNode(shape: CanvasShape, width: number, height: number, x: number, y: number): CanvasNode {
   const id = `${shape}-${crypto.randomUUID()}`
   return {
@@ -45,124 +60,227 @@ function makeNode(shape: CanvasShape, width: number, height: number, x: number, 
   }
 }
 
-export const Canvas = forwardRef<CanvasHandle>(function Canvas(_, ref) {
-  const rfInstance = useRef<ReactFlowInstance<CanvasNode, CanvasEdge> | null>(null)
-  const wrapperRef = useRef<HTMLDivElement>(null)
+export const Canvas = forwardRef<CanvasHandle, CanvasProps>(
+  function Canvas({ projectId, onSaveStatusChange }, ref) {
+    const rfInstance = useRef<ReactFlowInstance<CanvasNode, CanvasEdge> | null>(null)
+    const wrapperRef = useRef<HTMLDivElement>(null)
+    const loadAttemptedRef = useRef(false)
 
-  const room = useRoom()
-  const { nodes, edges, onNodesChange, onEdgesChange, onDelete } =
-    useLiveblocksFlow<CanvasNode, CanvasEdge>({ suspense: true })
+    const room = useRoom()
+    const { nodes, edges, onNodesChange, onEdgesChange, onDelete } =
+      useLiveblocksFlow<CanvasNode, CanvasEdge>({ suspense: true })
+    const updateMyPresence = useUpdateMyPresence()
 
-  useImperativeHandle(ref, () => ({
-    importTemplate(templateNodes, templateEdges) {
-      room.history.pause()
-      onNodesChange([
-        ...nodes.map((n) => ({ type: "remove" as const, id: n.id })),
-        ...templateNodes.map((n) => ({ type: "add" as const, item: n })),
-      ])
-      onEdgesChange([
-        ...edges.map((e) => ({ type: "remove" as const, id: e.id })),
-        ...templateEdges.map((e) => ({ type: "add" as const, item: e })),
-      ])
-      room.history.resume()
-      setTimeout(() => rfInstance.current?.fitView({ duration: 400 }), 50)
-    },
-  }), [room, nodes, edges, onNodesChange, onEdgesChange])
+    const { status: saveStatus, save: triggerSave } = useCanvasAutosave(nodes, edges, projectId)
 
-  const getCanvasCenter = useCallback(() => {
-    if (!rfInstance.current || !wrapperRef.current) return { x: 0, y: 0 }
-    const rect = wrapperRef.current.getBoundingClientRect()
-    return rfInstance.current.screenToFlowPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2,
-    })
-  }, [])
+    useEffect(() => {
+      onSaveStatusChange(saveStatus)
+    }, [saveStatus, onSaveStatusChange])
 
-  const handleAddNode = useCallback(
-    (shape: CanvasShape, width: number, height: number) => {
-      const { x, y } = getCanvasCenter()
-      onNodesChange([{ type: "add", item: makeNode(shape, width, height, x, y) }])
-    },
-    [getCanvasCenter, onNodesChange]
-  )
+    // Load saved canvas once on mount if the room is empty
+    useEffect(() => {
+      if (loadAttemptedRef.current) return
+      loadAttemptedRef.current = true
 
-  const handleConnect = useCallback(
-    (connection: Connection) => {
-      onEdgesChange([{
-        type: "add",
-        item: {
-          id: `edge-${crypto.randomUUID()}`,
-          type: "canvasEdge",
-          source: connection.source,
-          target: connection.target,
-          sourceHandle: connection.sourceHandle ?? null,
-          targetHandle: connection.targetHandle ?? null,
-          data: {},
-        },
-      }])
-    },
-    [onEdgesChange]
-  )
+      if (nodes.length > 0 || edges.length > 0) return
 
-  const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    event.dataTransfer.dropEffect = "copy"
-  }, [])
+      fetch(`/api/projects/${projectId}/canvas`)
+        .then((res) => {
+          if (res.status === 204) return null
+          if (!res.ok) return null
+          return res.json() as Promise<SavedCanvas>
+        })
+        .then((data) => {
+          if (!data) return
+          const { nodes: saved, edges: savedEdges } = data
+          if (!saved?.length && !savedEdges?.length) return
+          room.history.pause()
+          onNodesChange(saved.map((n) => ({ type: "add" as const, item: n })))
+          onEdgesChange(savedEdges.map((e) => ({ type: "add" as const, item: e })))
+          room.history.resume()
+          setTimeout(() => rfInstance.current?.fitView({ duration: 400 }), 50)
+        })
+        .catch(() => {})
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
-  const onDrop = useCallback(
-    (event: React.DragEvent<HTMLDivElement>) => {
-      event.preventDefault()
-      if (!rfInstance.current) return
+    useImperativeHandle(ref, () => ({
+      importTemplate(templateNodes, templateEdges) {
+        room.history.pause()
+        onNodesChange([
+          ...nodes.map((n) => ({ type: "remove" as const, id: n.id })),
+          ...templateNodes.map((n) => ({ type: "add" as const, item: n })),
+        ])
+        onEdgesChange([
+          ...edges.map((e) => ({ type: "remove" as const, id: e.id })),
+          ...templateEdges.map((e) => ({ type: "add" as const, item: e })),
+        ])
+        room.history.resume()
+        setTimeout(() => rfInstance.current?.fitView({ duration: 400 }), 50)
+      },
+      save: triggerSave,
+    }), [room, nodes, edges, onNodesChange, onEdgesChange, triggerSave])
 
-      const raw = event.dataTransfer.getData("application/ghost-shape")
-      if (!raw) return
+    const getCanvasCenter = useCallback(() => {
+      if (!rfInstance.current || !wrapperRef.current) return { x: 0, y: 0 }
+      const rect = wrapperRef.current.getBoundingClientRect()
+      return rfInstance.current.screenToFlowPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      })
+    }, [])
 
-      let payload: DragPayload
-      try {
-        payload = JSON.parse(raw) as DragPayload
-      } catch {
-        return
+    const handleAddNode = useCallback(
+      (shape: CanvasShape, width: number, height: number) => {
+        const { x, y } = getCanvasCenter()
+        onNodesChange([{ type: "add", item: makeNode(shape, width, height, x, y) }])
+      },
+      [getCanvasCenter, onNodesChange]
+    )
+
+    const handleConnect = useCallback(
+      (connection: Connection) => {
+        onEdgesChange([{
+          type: "add",
+          item: {
+            id: `edge-${crypto.randomUUID()}`,
+            type: "canvasEdge",
+            source: connection.source,
+            target: connection.target,
+            sourceHandle: connection.sourceHandle ?? null,
+            targetHandle: connection.targetHandle ?? null,
+            data: {},
+          },
+        }])
+      },
+      [onEdgesChange]
+    )
+
+    const handleMouseMove = useCallback(
+      (event: React.MouseEvent<HTMLDivElement>) => {
+        if (!rfInstance.current) return
+        const pos = rfInstance.current.screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        })
+        updateMyPresence({ cursor: { x: pos.x, y: pos.y } })
+      },
+      [updateMyPresence]
+    )
+
+    const handleMouseLeave = useCallback(() => {
+      updateMyPresence({ cursor: null })
+    }, [updateMyPresence])
+
+    // Stable ref so the keydown effect never re-registers when Liveblocks
+    // rotates the onDelete reference.
+    const onDeleteRef = useRef(onDelete)
+    onDeleteRef.current = onDelete
+
+    // Use rfInstance.current.getNodes/getEdges() to read React Flow's live
+    // selected state — Liveblocks does not persist the `selected` flag.
+    // Route deletion through onDelete (the Liveblocks collaborative handler).
+    useEffect(() => {
+      function handleKeyDown(event: KeyboardEvent) {
+        if (event.key !== "Delete" && event.key !== "Backspace") return
+        const target = event.target as HTMLElement
+        if (
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable
+        ) return
+
+        const rf = rfInstance.current
+        if (!rf) return
+
+        const selectedNodes = rf.getNodes().filter((n) => n.selected)
+        const selectedEdges = rf.getEdges().filter((e) => e.selected)
+        if (selectedNodes.length === 0 && selectedEdges.length === 0) return
+
+        event.preventDefault()
+        onDeleteRef.current({ nodes: selectedNodes, edges: selectedEdges })
       }
 
-      if (
-        !VALID_SHAPES.includes(payload.shape) ||
-        !Number.isFinite(payload.width) ||
-        !Number.isFinite(payload.height) ||
-        payload.width <= 0 ||
-        payload.height <= 0
-      ) return
+      document.addEventListener("keydown", handleKeyDown)
+      return () => document.removeEventListener("keydown", handleKeyDown)
+    }, [])
 
-      const { x, y } = rfInstance.current.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      })
+    const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault()
+      event.dataTransfer.dropEffect = "copy"
+    }, [])
 
-      onNodesChange([{ type: "add", item: makeNode(payload.shape, payload.width, payload.height, x, y) }])
-    },
-    [onNodesChange]
-  )
+    const onDrop = useCallback(
+      (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault()
+        if (!rfInstance.current) return
 
-  return (
-    <div ref={wrapperRef} className="h-full w-full" onDragOver={onDragOver} onDrop={onDrop}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={handleConnect}
-        onDelete={onDelete}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        defaultEdgeOptions={defaultEdgeOptions}
-        connectOnClick={false}
-        fitView
-        onInit={(instance) => { rfInstance.current = instance }}
+        const raw = event.dataTransfer.getData("application/ghost-shape")
+        if (!raw) return
+
+        let payload: DragPayload
+        try {
+          payload = JSON.parse(raw) as DragPayload
+        } catch {
+          return
+        }
+
+        if (
+          !VALID_SHAPES.includes(payload.shape) ||
+          !Number.isFinite(payload.width) ||
+          !Number.isFinite(payload.height) ||
+          payload.width <= 0 ||
+          payload.height <= 0
+        ) return
+
+        // Use cursor position directly; dragOffsetX/Y are the hotspot offsets within
+        // the drag preview (center of the scaled preview = center of node).
+        // screenToFlowPosition converts cursor screen coords to flow coords.
+        // makeNode centers the node at (x, y) in flow space.
+        const { x, y } = rfInstance.current.screenToFlowPosition({
+          x: event.clientX - (payload.dragOffsetX ?? 0),
+          y: event.clientY - (payload.dragOffsetY ?? 0),
+        })
+
+        onNodesChange([{
+          type: "add",
+          item: makeNode(payload.shape, payload.width, payload.height, x + payload.width / 2, y + payload.height / 2),
+        }])
+      },
+      [onNodesChange]
+    )
+
+    return (
+      <div
+        ref={wrapperRef}
+        className="h-full w-full"
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-        <MiniMap />
-        <CanvasControls />
-        <ShapePanel onAdd={handleAddNode} />
-      </ReactFlow>
-    </div>
-  )
-})
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={handleConnect}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          defaultEdgeOptions={defaultEdgeOptions}
+          connectionMode={ConnectionMode.Loose}
+          connectOnClick={false}
+          deleteKeyCode={null}
+          onInit={(instance) => { rfInstance.current = instance }}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+          <MiniMap />
+          <CanvasControls />
+          <ShapePanel onAdd={handleAddNode} />
+          <LiveCursors wrapperRef={wrapperRef} />
+          <PresenceAvatars />
+        </ReactFlow>
+      </div>
+    )
+  }
+)

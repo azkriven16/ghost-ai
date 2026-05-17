@@ -3,10 +3,12 @@
 import { Suspense, type RefObject } from "react"
 import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblocks/react"
 import { Canvas, type CanvasHandle } from "./canvas"
+import type { SaveStatus } from "@/hooks/use-canvas-autosave"
 
 interface CanvasProviderProps {
   roomId: string
-  canvasRef?: RefObject<CanvasHandle> | null
+  canvasRef?: RefObject<CanvasHandle | null> | null
+  onSaveStatusChange?: (status: SaveStatus) => void
 }
 
 function LoadingCanvas() {
@@ -25,7 +27,7 @@ function CanvasError() {
   )
 }
 
-export function CanvasProvider({ roomId, canvasRef }: CanvasProviderProps) {
+export function CanvasProvider({ roomId, canvasRef, onSaveStatusChange }: CanvasProviderProps) {
   return (
     <LiveblocksProvider
       authEndpoint={async (room) => {
@@ -40,11 +42,15 @@ export function CanvasProvider({ roomId, canvasRef }: CanvasProviderProps) {
     >
       <RoomProvider
         id={roomId}
-        initialPresence={{ cursor: null, isThinking: false }}
+        initialPresence={{ cursor: null, thinking: false }}
       >
         <ClientSideSuspense fallback={<LoadingCanvas />}>
           <Suspense fallback={<LoadingCanvas />}>
-            <Canvas ref={canvasRef ?? null} />
+            <Canvas
+            ref={canvasRef ?? null}
+            projectId={roomId}
+            onSaveStatusChange={onSaveStatusChange ?? (() => {})}
+          />
           </Suspense>
         </ClientSideSuspense>
       </RoomProvider>
