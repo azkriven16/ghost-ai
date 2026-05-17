@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { X, Plus, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -9,6 +10,7 @@ import { type Project } from "@/hooks/use-project-actions"
 interface ProjectSidebarProps {
   isOpen: boolean
   projects: Project[]
+  activeProjectId?: string
   onClose: () => void
   onNewProject: () => void
   onRenameProject: (project: Project) => void
@@ -18,6 +20,7 @@ interface ProjectSidebarProps {
 export function ProjectSidebar({
   isOpen,
   projects,
+  activeProjectId,
   onClose,
   onNewProject,
   onRenameProject,
@@ -69,6 +72,7 @@ export function ProjectSidebar({
                     <ProjectItem
                       key={project.id}
                       project={project}
+                      isActive={project.id === activeProjectId}
                       onRename={() => onRenameProject(project)}
                       onDelete={() => onDeleteProject(project)}
                     />
@@ -87,7 +91,11 @@ export function ProjectSidebar({
               <ScrollArea className="h-full">
                 <ul className="p-2">
                   {sharedProjects.map((project) => (
-                    <ProjectItem key={project.id} project={project} />
+                    <ProjectItem
+                      key={project.id}
+                      project={project}
+                      isActive={project.id === activeProjectId}
+                    />
                   ))}
                 </ul>
               </ScrollArea>
@@ -108,16 +116,28 @@ export function ProjectSidebar({
 
 interface ProjectItemProps {
   project: Project
+  isActive?: boolean
   onRename?: () => void
   onDelete?: () => void
 }
 
-function ProjectItem({ project, onRename, onDelete }: ProjectItemProps) {
+function ProjectItem({ project, isActive, onRename, onDelete }: ProjectItemProps) {
   return (
-    <li className="group flex items-center justify-between rounded-xl px-3 py-2 hover:bg-elevated">
-      <span className="truncate text-sm text-copy-primary">{project.name}</span>
+    <li
+      className={`group flex items-center rounded-xl ${
+        isActive ? "bg-accent-dim" : "hover:bg-elevated"
+      }`}
+    >
+      <Link
+        href={`/editor/${project.id}`}
+        className={`flex min-w-0 flex-1 truncate px-3 py-2 text-sm ${
+          isActive ? "font-medium text-brand" : "text-copy-primary"
+        }`}
+      >
+        {project.name}
+      </Link>
       {project.isOwned && (
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+        <div className="flex shrink-0 items-center gap-0.5 pr-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button
             variant="ghost"
             size="icon"

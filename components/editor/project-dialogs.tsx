@@ -17,6 +17,7 @@ interface CreateProjectDialogProps {
   name: string
   roomId: string
   isLoading: boolean
+  createError?: string
   onClose: () => void
   onNameChange: (name: string) => void
   onConfirm: () => void
@@ -27,6 +28,7 @@ export function CreateProjectDialog({
   name,
   roomId,
   isLoading,
+  createError,
   onClose,
   onNameChange,
   onConfirm,
@@ -55,6 +57,9 @@ export function CreateProjectDialog({
               Room ID: <span className="font-mono text-copy-secondary">{roomId}</span>
             </p>
           )}
+          {createError ? (
+            <p className="text-sm text-destructive">{createError}</p>
+          ) : null}
         </div>
 
         <DialogFooter>
@@ -75,6 +80,7 @@ interface RenameProjectDialogProps {
   currentName: string
   newName: string
   isLoading: boolean
+  renameError?: string
   onClose: () => void
   onNameChange: (name: string) => void
   onConfirm: () => void
@@ -85,6 +91,7 @@ export function RenameProjectDialog({
   currentName,
   newName,
   isLoading,
+  renameError,
   onClose,
   onNameChange,
   onConfirm,
@@ -115,6 +122,9 @@ export function RenameProjectDialog({
           onKeyDown={(e) => e.key === "Enter" && newName.trim() && onConfirm()}
           className="border-surface-border bg-subtle text-copy-primary placeholder:text-copy-faint"
         />
+        {renameError ? (
+          <p className="mt-3 text-sm text-destructive">{renameError}</p>
+        ) : null}
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose} disabled={isLoading}>
@@ -133,6 +143,7 @@ interface DeleteProjectDialogProps {
   isOpen: boolean
   projectName: string
   isLoading: boolean
+  deleteError?: string
   onClose: () => void
   onConfirm: () => void
 }
@@ -141,6 +152,7 @@ export function DeleteProjectDialog({
   isOpen,
   projectName,
   isLoading,
+  deleteError,
   onClose,
   onConfirm,
 }: DeleteProjectDialogProps) {
@@ -152,6 +164,9 @@ export function DeleteProjectDialog({
           <DialogDescription className="text-copy-muted">
             &ldquo;{projectName}&rdquo; will be permanently deleted. This cannot be undone.
           </DialogDescription>
+          {deleteError ? (
+            <p className="mt-3 text-sm text-destructive">{deleteError}</p>
+          ) : null}
         </DialogHeader>
 
         <DialogFooter>

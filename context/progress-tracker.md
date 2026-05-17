@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Feature 08: TBD
+- Feature 10: TBD
 
 ## Completed
 
@@ -74,13 +74,28 @@ Update this file whenever the current phase, active feature, or implementation s
   - `hooks/use-project-dialogs.ts` — deleted (replaced by `use-project-actions`).
   - TypeScript clean, production build passes.
 
+- Feature 08: Editor Workspace Shell
+  - `lib/project-access.ts` — `getCurrentIdentity()` (userId + primary email via Clerk) and `canAccessProject()` (owner or collaborator check via Prisma).
+  - `components/editor/access-denied.tsx` — centered lock icon, short message, link back to `/editor`. Used for missing or unauthorized projects.
+  - `components/editor/editor-navbar.tsx` — extended with optional `projectName` (center), `onShare`, `isAiSidebarOpen`, `onToggleAiSidebar` props. PanelRightOpen/PanelRightClose icons for AI toggle; active state uses `text-ai-text`.
+  - `components/editor/project-sidebar.tsx` — added `activeProjectId?: string` prop; active item highlighted with `bg-accent-dim` and `text-brand`.
+  - `components/editor/workspace-shell.tsx` — client shell managing left sidebar + right AI sidebar state; renders `EditorNavbar` with project name, `ProjectSidebar` with active highlight, canvas placeholder, fixed right AI sidebar placeholder, and all three project dialogs.
+  - `app/editor/[roomId]/page.tsx` — async server component; unauthenticated → redirect `/sign-in`; missing or unauthorized → `AccessDenied`; otherwise renders `WorkspaceShell` with project + user project lists.
+  - TypeScript clean, production build passes.
+
+- Feature 09: Share Dialog
+  - `app/api/projects/[projectId]/collaborators/route.ts` — `GET` (list collaborators enriched with Clerk display name + avatar, returns `isOwner`), `POST` (invite by email, owner only, upserts to avoid duplicates), `DELETE` (remove by `?email=` query param, owner only).
+  - `components/editor/share-dialog.tsx` — client dialog; fetches collaborators on open; owner view: email invite input, collaborator list with remove buttons; collaborator view: read-only list; copy project link with `Copied!` feedback; Clerk avatars with initial fallback.
+  - `components/editor/workspace-shell.tsx` — imports `ShareDialog`, adds `isShareOpen` state, wires `onShare` to open it.
+  - TypeScript clean, production build passes.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Feature 08: TBD
+- Feature 10: TBD
 
 ## Open Questions
 
