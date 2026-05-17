@@ -28,20 +28,21 @@ export function useKeyboardShortcuts({ instance, undo, redo }: UseKeyboardShortc
       if (isTypingTarget(e)) return
 
       const isMeta = e.metaKey || e.ctrlKey
+      const key = e.key.toLowerCase()
 
-      if (!isMeta && (e.key === "+" || e.key === "=")) {
+      if (!isMeta && (key === "+" || key === "=")) {
         e.preventDefault()
         instance?.zoomIn({ duration: 200 })
-      } else if (!isMeta && e.key === "-") {
+      } else if (!isMeta && key === "-") {
         e.preventDefault()
         instance?.zoomOut({ duration: 200 })
-      } else if (isMeta && !e.shiftKey && e.key === "z") {
+      } else if (isMeta && !e.shiftKey && key === "z") {
         e.preventDefault()
         undo()
-      } else if (isMeta && e.shiftKey && e.key === "z") {
+      } else if (isMeta && e.shiftKey && key === "z") {
         e.preventDefault()
         redo()
-      } else if (isMeta && e.key === "y") {
+      } else if (isMeta && key === "y") {
         e.preventDefault()
         redo()
       }

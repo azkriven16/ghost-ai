@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { EdgeLabelRenderer, getSmoothStepPath, useReactFlow, type EdgeProps } from "@xyflow/react"
 import type { CanvasEdge } from "@/types/canvas"
 
@@ -23,6 +23,7 @@ export function CanvasEdgeRenderer({
   const [isHovered, setIsHovered] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState("")
+  const cancelBlurRef = useRef(false)
 
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
@@ -90,9 +91,12 @@ export function CanvasEdgeRenderer({
               value={draft}
               size={Math.max(draft.length + 1, 6)}
               onChange={(e) => setDraft(e.target.value)}
-              onBlur={commitEdit}
+              onBlur={() => {
+                if (cancelBlurRef.current) { cancelBlurRef.current = false; return }
+                commitEdit()
+              }}
               onKeyDown={(e) => {
-                if (e.key === "Escape") setIsEditing(false)
+                if (e.key === "Escape") { e.preventDefault(); cancelBlurRef.current = true; setIsEditing(false) }
                 if (e.key === "Enter") { e.preventDefault(); commitEdit() }
               }}
               onMouseDown={(e) => e.stopPropagation()}

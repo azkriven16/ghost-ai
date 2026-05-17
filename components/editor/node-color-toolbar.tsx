@@ -22,6 +22,7 @@ export function NodeColorToolbar({ selected, activeBg, onSelect }: NodeColorTool
           return (
             <button
               key={pair.bg}
+              type="button"
               onClick={() => onSelect(pair)}
               title={pair.text}
               className="h-4 w-4 rounded-full transition-[box-shadow]"

@@ -148,6 +148,17 @@ function TemplatePreview({ nodes, edges }: { nodes: CanvasNode[]; edges: CanvasE
           )
         }
 
+        if (shape === "cylinder") {
+          const ery = Math.max(h * 0.12, 2)
+          return (
+            <g key={node.id}>
+              <rect x={x} y={y + ery} width={w} height={h - ery} fill={bg} stroke={stroke} strokeWidth={0.75} />
+              <ellipse cx={cx} cy={y + ery} rx={w / 2} ry={ery} fill={bg} stroke={stroke} strokeWidth={0.75} />
+              <ellipse cx={cx} cy={y + h} rx={w / 2} ry={ery} fill={bg} stroke={stroke} strokeWidth={0.75} />
+            </g>
+          )
+        }
+
         return (
           <rect
             key={node.id}

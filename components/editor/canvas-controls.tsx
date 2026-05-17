@@ -18,9 +18,11 @@ function ControlButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
       title={label}
+      aria-label={label}
       className="flex h-7 w-7 items-center justify-center rounded-lg text-copy-secondary transition-colors hover:bg-accent-dim hover:text-copy-primary disabled:cursor-not-allowed disabled:opacity-30"
     >
       {children}

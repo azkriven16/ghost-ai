@@ -10,6 +10,7 @@ import {
   type ReactFlowInstance,
   type Connection,
 } from "@xyflow/react"
+import { useRoom } from "@liveblocks/react"
 import { useLiveblocksFlow } from "@liveblocks/react-flow"
 import { CanvasNodeRenderer } from "./canvas-node"
 import { CanvasEdgeRenderer } from "./canvas-edge"
@@ -48,11 +49,13 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_, ref) {
   const rfInstance = useRef<ReactFlowInstance<CanvasNode, CanvasEdge> | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
+  const room = useRoom()
   const { nodes, edges, onNodesChange, onEdgesChange, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({ suspense: true })
 
   useImperativeHandle(ref, () => ({
     importTemplate(templateNodes, templateEdges) {
+      room.history.pause()
       onNodesChange([
         ...nodes.map((n) => ({ type: "remove" as const, id: n.id })),
         ...templateNodes.map((n) => ({ type: "add" as const, item: n })),
@@ -61,9 +64,10 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_, ref) {
         ...edges.map((e) => ({ type: "remove" as const, id: e.id })),
         ...templateEdges.map((e) => ({ type: "add" as const, item: e })),
       ])
+      room.history.resume()
       setTimeout(() => rfInstance.current?.fitView({ duration: 400 }), 50)
     },
-  }), [nodes, edges, onNodesChange, onEdgesChange])
+  }), [room, nodes, edges, onNodesChange, onEdgesChange])
 
   const getCanvasCenter = useCallback(() => {
     if (!rfInstance.current || !wrapperRef.current) return { x: 0, y: 0 }

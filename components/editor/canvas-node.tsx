@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Handle, NodeResizer, Position, useNodeId, useReactFlow, type NodeProps } from "@xyflow/react"
 import { NodeColorToolbar } from "./node-color-toolbar"
 import { NODE_COLORS, type CanvasNode, type CanvasShape, type NodeColorPair } from "@/types/canvas"
@@ -136,6 +136,7 @@ export function CanvasNodeRenderer({ data, selected }: NodeProps<CanvasNode>) {
   const nodeId = useNodeId() ?? ""
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState("")
+  const ignoreBlurRef = useRef(false)
 
   const shape = data.shape ?? "rectangle"
   const color = data.color ?? DEFAULT_COLOR
@@ -164,9 +165,12 @@ export function CanvasNodeRenderer({ data, selected }: NodeProps<CanvasNode>) {
       rows={1}
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
-      onBlur={commitEdit}
+      onBlur={() => {
+        if (ignoreBlurRef.current) { ignoreBlurRef.current = false; return }
+        commitEdit()
+      }}
       onKeyDown={(e) => {
-        if (e.key === "Escape") setIsEditing(false)
+        if (e.key === "Escape") { e.stopPropagation(); ignoreBlurRef.current = true; setIsEditing(false) }
         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitEdit() }
       }}
       onMouseDown={(e) => e.stopPropagation()}
