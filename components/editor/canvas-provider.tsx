@@ -1,11 +1,12 @@
 "use client"
 
-import { Suspense } from "react"
+import { Suspense, type RefObject } from "react"
 import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblocks/react"
-import { Canvas } from "./canvas"
+import { Canvas, type CanvasHandle } from "./canvas"
 
 interface CanvasProviderProps {
   roomId: string
+  canvasRef?: RefObject<CanvasHandle> | null
 }
 
 function LoadingCanvas() {
@@ -24,7 +25,7 @@ function CanvasError() {
   )
 }
 
-export function CanvasProvider({ roomId }: CanvasProviderProps) {
+export function CanvasProvider({ roomId, canvasRef }: CanvasProviderProps) {
   return (
     <LiveblocksProvider
       authEndpoint={async (room) => {
@@ -43,7 +44,7 @@ export function CanvasProvider({ roomId }: CanvasProviderProps) {
       >
         <ClientSideSuspense fallback={<LoadingCanvas />}>
           <Suspense fallback={<LoadingCanvas />}>
-            <Canvas />
+            <Canvas ref={canvasRef ?? null} />
           </Suspense>
         </ClientSideSuspense>
       </RoomProvider>

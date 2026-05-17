@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Feature 14: TBD
+- Feature 19: TBD
 
 ## Completed
 
@@ -116,13 +116,49 @@ Update this file whenever the current phase, active feature, or implementation s
   - `components/editor/shape-panel.tsx` — added `createDragPreview()` and `getSvgPreviewMarkup()` helpers; `onDragStart` calls `event.dataTransfer.setDragImage` with a scaled (75%) shape preview element appended to `document.body`, removed via `requestAnimationFrame` after capture. `getComputedStyle` resolves `--color-surface` at runtime for the preview background.
   - TypeScript clean, production build passes.
 
+- Feature 14: Node Resizing & Inline Label Editing
+  - `components/editor/canvas-node.tsx` — added `NodeResizer` (from `@xyflow/react`) with `isVisible={!!selected}`, per-shape `minWidth`/`minHeight` from `SHAPE_MIN` table, colored handles (8×8px, `border-radius:2px`) and subtle line styling at `${color}55` opacity.
+  - `useReactFlow().updateNodeData` + `useNodeId()` sync label changes through the existing `onNodesChange` → Liveblocks pipeline.
+  - Editing state (`isEditing`, `draft`) lives in `CanvasNodeRenderer`; a `<textarea>` overlay (`position:absolute; top:50%; transform:translateY(-50%)`) is passed as `editOverlay` to both `CssShapeNode` and `SvgShapeNode`.
+  - Double-click enters edit mode; blur or Enter commits; Escape discards. `onMouseDown`/`onPointerDown` stop propagation on the textarea to prevent canvas drag/pan.
+  - TypeScript clean, production build passes.
+
+- Feature 15: Node Color Toolbar
+  - `types/canvas.ts` — added `NodeColorPair` interface and `NODE_COLORS` constant (8 bg/text pairs from ui-context); added `bgColor?` and `textColor?` to `CanvasNodeData`.
+  - `components/editor/node-color-toolbar.tsx` — `NodeToolbar` (Position.Top, offset 8) with 8 color swatches; active swatch has colored `outline`; hover shows tight `box-shadow` glow at `${pair.text}40`; `onMouseDown`/`onPointerDown` stop propagation.
+  - `components/editor/canvas-node.tsx` — `bgColor`/`textColor` wired into CSS shape background and SVG fill; `NodeLabel` accepts `textColor`; SVG path sub-components refactored to accept `fill`, `stroke`, `sw` directly; `handleColorSelect` calls `updateNodeData` through Liveblocks pipeline.
+  - TypeScript clean, production build passes.
+
+- Feature 16: Edge Behavior
+  - `types/canvas.ts` — added `CanvasEdgeData` interface (`label?: string`); `CanvasEdge` typed as `Edge<CanvasEdgeData, "canvasEdge">`.
+  - `components/editor/canvas-edge.tsx` — `getSmoothStepPath` (`borderRadius:8`); visible 1.5px path + transparent 20px interaction overlay; `markerEnd` passed through; `isHovered` drives stroke transition `#f8fafc60` → `#f8fafc`; `EdgeLabelRenderer` at midpoint; auto-sizing input, pill badge, faint hint when active+empty; `updateEdgeData` → Liveblocks.
+  - `components/editor/canvas.tsx` — `edgeTypes`, `defaultEdgeOptions` (MarkerType.ArrowClosed); `handleConnect` wraps `onEdgesChange` with typed `CanvasEdge` (bypasses Liveblocks' untyped `onConnect`).
+  - `components/editor/canvas-node.tsx` — all 4 `Handle` components get `className="canvas-handle"`.
+  - `app/globals.css` — `.canvas-handle`: 10×10px white dot, hidden by default, shown on node hover/selection and during connecting/valid states.
+  - TypeScript clean, production build passes.
+
+- Feature 17: Canvas Ergonomics
+  - `components/editor/canvas-controls.tsx` — floating pill control bar (`Panel position="bottom-left"`); zoom out/fit/in buttons; undo/redo buttons with `useUndo`/`useRedo`/`useCanUndo`/`useCanRedo` from `@liveblocks/react`; `disabled:opacity-30` on history buttons.
+  - `hooks/use-keyboard-shortcuts.ts` — `window.addEventListener("keydown")`; skips `INPUT`/`TEXTAREA`/`contentEditable` targets; `+`/`=` → zoom in, `-` → zoom out, `Ctrl+Z` → undo, `Ctrl+Shift+Z`/`Ctrl+Y` → redo.
+  - `components/editor/canvas.tsx` — `<CanvasControls />` rendered inside `<ReactFlow>` so both `useReactFlow` and Liveblocks hooks are in scope.
+  - Build not run (pnpm build denied by user); TypeScript assumed clean based on implementation.
+
+- Feature 18: Starter Templates
+  - `components/editor/starter-templates.ts` — `CanvasTemplate` interface; `CANVAS_TEMPLATES` array (3 templates: Microservices Architecture, CI/CD Pipeline, Event-Driven System) using `NODE_COLORS` and shared canvas types; `n()`/`e()` helpers for terse template data.
+  - `components/editor/starter-templates-modal.tsx` — shadcn `Dialog` with `ScrollArea`; 2-col card grid; `TemplatePreview` SVG component computes bounds from node positions, scales to 240×150 viewport, draws edges as `<line>` elements and nodes as shape-appropriate SVG primitives (rect/ellipse/polygon); Import button calls `onImport(template)` then closes.
+  - `components/editor/canvas.tsx` — converted to `forwardRef<CanvasHandle>` exporting `CanvasHandle` interface; `useImperativeHandle` exposes `importTemplate(nodes, edges)`: atomically removes all existing nodes/edges then adds template items via `onNodesChange`/`onEdgesChange`, then `fitView(400ms)` after 50ms.
+  - `components/editor/canvas-provider.tsx` — accepts optional `canvasRef?: RefObject<CanvasHandle>`, passes to `<Canvas ref={canvasRef ?? null} />`.
+  - `components/editor/editor-navbar.tsx` — `onOpenTemplates?` prop; `LayoutTemplate` icon button added before Share button.
+  - `components/editor/workspace-shell.tsx` — `canvasRef = useRef<CanvasHandle>(null)`; `isTemplatesOpen` state; `handleTemplateImport` delegates to `canvasRef.current?.importTemplate`; `StarterTemplatesModal` rendered at root.
+  - Build not run (pnpm build denied by user); TypeScript assumed clean based on implementation.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Feature 14: TBD
+- TBD
 
 ## Open Questions
 

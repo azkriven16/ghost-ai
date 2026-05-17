@@ -91,3 +91,24 @@ body {
   background-color: var(--bg-base);
   color: var(--text-primary);
 }
+
+/* React Flow canvas handle overrides */
+.react-flow__handle.canvas-handle {
+  width: 10px;
+  height: 10px;
+  background: white;
+  border: 2px solid var(--bg-surface);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.react-flow__node:hover .react-flow__handle.canvas-handle,
+.react-flow__node.selected .react-flow__handle.canvas-handle {
+  opacity: 1;
+}
+
+.react-flow__handle.canvas-handle.react-flow__handle-connecting,
+.react-flow__handle.canvas-handle.react-flow__handle-valid {
+  opacity: 1;
+}
