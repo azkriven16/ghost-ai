@@ -11,6 +11,7 @@ import {
   DeleteProjectDialog,
 } from "./project-dialogs"
 import { ShareDialog } from "./share-dialog"
+import { CanvasProvider } from "./canvas-provider"
 
 interface WorkspaceShellProps {
   projectId: string
@@ -71,9 +72,8 @@ export function WorkspaceShell({
           onDeleteProject={openDelete}
         />
         <div className="relative flex flex-1 min-h-0">
-          {/* Canvas placeholder */}
-          <div className="flex flex-1 items-center justify-center bg-base">
-            <p className="text-sm text-copy-faint">Canvas coming soon</p>
+          <div className="flex flex-1 min-h-0">
+            <CanvasProvider roomId={projectId} />
           </div>
 
           {/* AI sidebar */}

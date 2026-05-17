@@ -1,1 +1,1 @@
-after i signed in and im in the dashboard i click the sidebar, i click a project or an item in the sidebar nothing happens, its not taking me to that specific project page
+when i am at the project page http://localhost:3000/editor/cmp96bvp80000wpvmxbxzi3me, i try to drag a shape its always square, when i click on a shape nothing happens, if i click on a shape without dragging it the shape should appear at he center of the canvas

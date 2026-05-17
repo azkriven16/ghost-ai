@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Feature 10: TBD
+- Feature 13: TBD
 
 ## Completed
 
@@ -89,13 +89,35 @@ Update this file whenever the current phase, active feature, or implementation s
   - `components/editor/workspace-shell.tsx` — imports `ShareDialog`, adds `isShareOpen` state, wires `onShare` to open it.
   - TypeScript clean, production build passes.
 
+- Feature 10: Liveblocks Setup
+  - `liveblocks.config.ts` — `Presence` typed with `cursor: { x, y } | null` and `isThinking: boolean`; `UserMeta.info` typed with `name`, `avatar`, `cursorColor`.
+  - `lib/liveblocks.ts` — cached `Liveblocks` node client singleton (throws at startup if `LIVEBLOCKS_SECRET_KEY` missing); `getCursorColor(userId)` deterministically maps user ID hash to one of 10 palette colors.
+  - `app/api/liveblocks-auth/route.ts` — `POST`: requires Clerk auth, validates `projectId` body param, verifies project access via `canAccessProject`, ensures room exists via `getOrCreateRoom`, issues session token with user name/avatar/cursor color.
+  - `@liveblocks/node@3.19.1` installed.
+  - TypeScript clean, production build passes.
+
+- Feature 11: Base Canvas
+  - `types/canvas.ts` — `CanvasNodeData` interface (`label`, `color?`, `shape?`); `CanvasNode` and `CanvasEdge` typed aliases using `"canvasNode"` and `"canvasEdge"` discriminants.
+  - `components/editor/canvas.tsx` — client component; `useLiveblocksFlow<CanvasNode, CanvasEdge>({ suspense: true })` wires Liveblocks Storage to `ReactFlow`; `Background` with dot pattern, `MiniMap`; `@xyflow/react/dist/style.css` imported.
+  - `components/editor/canvas-provider.tsx` — client wrapper; `LiveblocksProvider` with custom `authEndpoint` function that POSTs `{ projectId: room }` to `/api/liveblocks-auth`; `RoomProvider` with `initialPresence: { cursor: null, isThinking: false }`; `ClientSideSuspense` with loading fallback and error fallback.
+  - `components/editor/workspace-shell.tsx` — canvas placeholder replaced with `<CanvasProvider roomId={projectId} />`.
+  - `NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY` and `LIVEBLOCKS_SECRET_KEY` added to `.env.local`.
+  - TypeScript clean, production build passes.
+
+- Feature 12: Shape Panel
+  - `types/canvas.ts` — `CanvasShape` exported as a union type (`"rectangle" | "circle" | "diamond" | "pill" | "cylinder" | "hexagon"`); `CanvasNodeData.shape` uses it.
+  - `components/editor/canvas-node.tsx` — `CanvasNodeRenderer` registered as `"canvasNode"` type; renders bordered rectangle with centered label, connection handles on all four sides, selection ring via `boxShadow`.
+  - `components/editor/shape-panel.tsx` — floating pill toolbar via React Flow `Panel position="bottom-center"`; six draggable `ShapeButton` items (Rectangle 200×80, Diamond 140×140, Circle 100×100, Pill 180×60, Cylinder 100×120, Hexagon 120×120); drag payload `{ shape, width, height }` written as `application/ghost-shape` on `dataTransfer`.
+  - `components/editor/canvas.tsx` — `onInit` stores React Flow instance ref; `onDragOver` enables copy drop effect; `onDrop` parses payload, calls `rfInstance.screenToFlowPosition`, centers node on cursor, generates ID `${shape}-${Date.now()}-${counter}`, calls `onNodesChange([{ type: "add", item }])`; `nodeTypes` registers `CanvasNodeRenderer`; `ShapePanel` rendered inside `ReactFlow`.
+  - TypeScript clean, production build passes.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Feature 10: TBD
+- Feature 13: TBD
 
 ## Open Questions
 
