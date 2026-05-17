@@ -35,12 +35,12 @@ export async function getProjectsForUser(): Promise<{
       })
     : [];
 
+  const ownedIds = new Set(ownedRows.map((p) => p.id));
+
   return {
     owned: ownedRows.map((p) => ({ id: p.id, name: p.name, isOwned: true })),
-    shared: collaboratorRows.map((c) => ({
-      id: c.project.id,
-      name: c.project.name,
-      isOwned: false,
-    })),
+    shared: collaboratorRows
+      .filter((c) => !ownedIds.has(c.project.id))
+      .map((c) => ({ id: c.project.id, name: c.project.name, isOwned: false })),
   };
 }

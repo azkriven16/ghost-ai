@@ -1,15 +1,26 @@
 "use client"
 
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Share2 } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 
 interface EditorNavbarProps {
   isSidebarOpen: boolean
   onToggleSidebar: () => void
+  projectName?: string
+  onShare?: () => void
+  isAiSidebarOpen?: boolean
+  onToggleAiSidebar?: () => void
 }
 
-export function EditorNavbar({ isSidebarOpen, onToggleSidebar }: EditorNavbarProps) {
+export function EditorNavbar({
+  isSidebarOpen,
+  onToggleSidebar,
+  projectName,
+  onShare,
+  isAiSidebarOpen,
+  onToggleAiSidebar,
+}: EditorNavbarProps) {
   return (
     <header className="h-12 shrink-0 flex items-center px-3 bg-surface border-b border-surface-border">
       <div className="flex items-center">
@@ -27,9 +38,38 @@ export function EditorNavbar({ isSidebarOpen, onToggleSidebar }: EditorNavbarPro
         </Button>
       </div>
 
-      <div className="flex-1" />
+      <div className="flex min-w-0 flex-1 items-center justify-center px-2">
+        {projectName && (
+          <span
+            className="max-w-full truncate text-sm font-medium text-copy-primary"
+            title={projectName}
+          >
+            {projectName}
+          </span>
+        )}
+      </div>
 
-      <div className="flex items-center">
+      <div className="flex items-center gap-1">
+        {onShare && (
+          <Button variant="ghost" size="icon" onClick={onShare} aria-label="Share project">
+            <Share2 className="h-5 w-5" />
+          </Button>
+        )}
+        {onToggleAiSidebar && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleAiSidebar}
+            aria-label={isAiSidebarOpen ? "Close AI sidebar" : "Open AI sidebar"}
+            className={isAiSidebarOpen ? "text-ai-text" : ""}
+          >
+            {isAiSidebarOpen ? (
+              <PanelRightClose className="h-5 w-5" />
+            ) : (
+              <PanelRightOpen className="h-5 w-5" />
+            )}
+          </Button>
+        )}
         <UserButton />
       </div>
     </header>
