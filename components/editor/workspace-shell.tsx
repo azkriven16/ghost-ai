@@ -39,6 +39,10 @@ export function WorkspaceShell({
 
   const canvasRef = useRef<CanvasHandle>(null)
   const handleSaveStatusChange = useCallback((s: SaveStatus) => setSaveStatus(s), [])
+  const getCanvasData = useCallback(
+    () => canvasRef.current?.getNodesAndEdges() ?? { nodes: [], edges: [] },
+    []
+  )
 
   const {
     createDialog,
@@ -95,13 +99,16 @@ export function WorkspaceShell({
               roomId={projectId}
               canvasRef={canvasRef}
               onSaveStatusChange={handleSaveStatusChange}
-            />
+            >
+              <AiSidebar
+                isOpen={isAiSidebarOpen}
+                onClose={() => setIsAiSidebarOpen(false)}
+                projectId={projectId}
+                roomId={projectId}
+                getCanvasData={getCanvasData}
+              />
+            </CanvasProvider>
           </div>
-
-          <AiSidebar
-            isOpen={isAiSidebarOpen}
-            onClose={() => setIsAiSidebarOpen(false)}
-          />
         </div>
       </div>
 

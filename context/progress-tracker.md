@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Feature 22: TBD
+- TBD (Features 1–25 complete)
 
 ## Completed
 
@@ -181,9 +181,69 @@ Update this file whenever the current phase, active feature, or implementation s
   - Requires `BLOB_READ_WRITE_TOKEN` in environment.
   - TypeScript clean (build not run).
 
-## In Progress
+- Feature 22: Design Agent API
+  - `prisma/models/task-run.prisma` — `TaskRun` model (`runId` unique, `projectId`, `userId`, `createdAt`; indexes on `runId` and `[userId, projectId]`).
+  - Migration `20260518013822_add_task_run` applied; Prisma client regenerated.
+  - `trigger/design-agent.ts` — `designAgent` task: accepts `{ prompt, roomId }`, logs input, echoes payload (AI logic TODO).
+  - `app/api/ai/design/route.ts` — `POST`: auth check, validates `{ prompt, roomId, projectId }`, triggers `designAgent` via `designAgent.trigger`, creates `TaskRun` record, returns `{ runId }`.
+  - `app/api/ai/design/token/route.ts` — `POST`: auth check, validates `{ runId }`, verifies ownership via `TaskRun`, issues Trigger.dev public token scoped to that run via `auth.createPublicToken`, returns `{ token }`.
+  - `liveblocks.config.ts` — `RoomEvent` updated from `Record<string, never>` to typed `AI_NODES_GENERATED` union (unblocks `broadcastEvent` in `ai-design-generation.ts`).
+  - `@trigger.dev/sdk@4.4.6` installed (from previous setup); `trigger.config.ts` at root with real project ID `proj_jsdqfiktfqjbewukfmuj`.
+  - `trigger/ai-design-generation.ts` and `trigger/spec-generation.ts` retained from prior setup (AI logic TODO).
+  - TypeScript clean, production build passes.
 
-- None.
+- Feature 25: Sidebar Chat Feed
+  - `types/tasks.ts` — added `ChatMessageSchema` (zod) with `id`, `sender`, `role`, `content`, `timestamp`; `ChatMessage` inferred type.
+  - `liveblocks.config.ts` — added `aiChat: LiveList<ChatMessage>` to `Storage`; import of `LiveList` from `@liveblocks/client` at file top.
+  - `components/editor/canvas-provider.tsx` — added `import { LiveList }` from `@liveblocks/client`; added `initialStorage={{ aiStatusFeed: null, aiChat: new LiveList([]) }}` to `RoomProvider` (initialises both storage slots for new rooms).
+  - `components/editor/ai-sidebar.tsx` — replaced local `messages` state with `useStorage((root) => root.aiChat)`; added `useSelf` for sender name; `addMessage` mutation pushes validated `ChatMessage` to `aiChat`; incoming messages validated with `ChatMessageSchema.safeParse` before render; `handleSend` pushes to chat feed (no AI backend trigger); AI status banner kept as a separate `shrink-0` strip above the message list; empty state shows `MessageSquare` icon; each message renders sender name + formatted timestamp + content pill; error state shown above input on send failure; `AI_STATUS` event handler and `aiStatusFeed` storage reads remain intact for Feature 24 shared status indicator.
+
+- Feature 24: AI Presence State
+  - `types/tasks.ts` — `AiStatusMessageSchema` (zod) with optional `text`, `status`, `timestamp`; `AiStatusMessage` inferred type.
+  - `liveblocks.config.ts` — `Storage` updated from `Record<string, never>` to include `aiStatusFeed: { text?, status?, timestamp? } | null`; all room participants subscribe to the same value.
+  - `components/editor/canvas-provider.tsx` — removed `onAiStatus` prop; added `children?: ReactNode`; children render inside `RoomProvider` but outside `ClientSideSuspense` so `AiSidebar` gets Liveblocks hook access.
+  - `components/editor/canvas.tsx` — removed `AiStatus` type export, `onAiStatus` prop, and `AI_STATUS` branch from `useEventListener`; only `AI_NODES_GENERATED` handled here.
+  - `components/editor/workspace-shell.tsx` — removed `AiTaskStatus` interface, `aiTaskStatus` state, `handleAiStatus`, and `onAiStatus` from `CanvasProvider`; `AiSidebar` now passed as `children` of `CanvasProvider` so it lives inside the room context.
+  - `components/editor/ai-sidebar.tsx` — added `useEventListener` (subscribes to `AI_STATUS` events, validates via `AiStatusMessageSchema`, writes to `aiStatusFeed` Storage); `useStorage` (reads shared feed for all participants); `useMutation` (writes to `aiStatusFeed`); `useUpdateMyPresence` (sets `thinking: true/false` on send/complete); header dot indicator when active; subtitle switches to "Generating…"; input + send button disabled for ALL participants while `isGenerating`; status bubble driven by shared `feedData`.
+  - `components/editor/live-cursors.tsx` — cursor name badge switches from `inline-block` to `inline-flex`; spinning circle prepended when `user.presence.thinking === true`; inline `@keyframes spin` injected via `<style>`.
+
+- Feature 26: AI Chat Functional
+  - `components/editor/ai-sidebar.tsx` — `handleSend` now calls `POST /api/ai/design` with `{ prompt, roomId, projectId }`; reads `{ runId, publicToken }` from response; stores both in local state. `useRealtimeRun(runId, { accessToken: publicToken })` from `@trigger.dev/react-hooks` subscribes to the run. A `useEffect` watches `run.status` for terminal states (`COMPLETED`, `FAILED`, etc.) and pushes a final AI message to `aiChat`, clears presence, clears feed, and resets run state. Input and send button are disabled while `isSending || !!runId`. Status strip (green-tinted, with spinner) shown above input only while run is active. User chat bubbles: `bg-[#62C073] text-[#0F2E18]`; send button: `bg-[#62C073] text-[#0F2E18]`. `handledRunRef` prevents duplicate completion messages across re-renders.
+  - `app/api/ai/design/route.ts` — now imports `auth` from `@trigger.dev/sdk`; issues a `publicToken` scoped to the new run immediately after trigger + DB insert; returns `{ runId, publicToken }` in the `201` response — frontend needs only one fetch instead of two.
+  - TypeScript clean.
+
+- Feature 23: Design Agent Logic
+  - `trigger/design-agent.ts` — full Gemini implementation: `generateText` + `Output.object` + `zodSchema(DesignSchema)` for structured node/edge output; broadcasts `AI_STATUS` events at start/generating/complete/error; broadcasts `AI_NODES_GENERATED` with typed nodes+edges for canvas application.
+  - `liveblocks.config.ts` — `RoomEvent` extended to discriminated union: `AI_STATUS | AI_NODES_GENERATED`; node payloads use `style: { width, height }` format matching React Flow conventions.
+  - `components/editor/canvas.tsx` — `useEventListener` handles `AI_NODES_GENERATED` (applies nodes/edges via `onNodesChange`/`onEdgesChange` + `fitView`) and `AI_STATUS` (calls `onAiStatus` callback); exports `AiStatus` type.
+  - `components/editor/canvas-provider.tsx` — threads `onAiStatus` prop down to Canvas.
+  - `components/editor/workspace-shell.tsx` — holds `aiTaskStatus` state; `handleAiStatus` callback wired to CanvasProvider; passes `aiTaskStatus`, `projectId`, `roomId`, `onAiTaskComplete` to AiSidebar.
+  - `components/editor/ai-sidebar.tsx` — calls `POST /api/ai/design` on send; shows live spinner status bubble from `aiTaskStatus` prop; saves final complete/error message to thread; disables input during generation.
+  - Model: `gemini-2.5-flash` (stable, free-tier available, supports structured output on v1beta); `gemini-1.5-flash` removed from Google's v1beta API.
+  - TypeScript clean, production build passes.
+
+- Feature 28: Spec Persistence & Download
+  - `prisma/models/project-spec.prisma` — `ProjectSpec` model (`id`, `projectId` FK to `Project` with cascade delete, `filePath`, `createdAt`; index on `projectId`).
+  - `prisma/models/project.prisma` — added `specs ProjectSpec[]` back-relation.
+  - Migration `20260518053742_add_project_spec` applied; Prisma client regenerated.
+  - `trigger/generate-spec.ts` — after generating spec text: uploads Markdown to Vercel Blob at `specs/{projectId}/{uuid}.md` (private, `text/markdown`, no random suffix); creates `ProjectSpec` record via Prisma; metadata updated to `saving` at 80%; returns `{ spec, specId }`.
+  - `app/api/projects/[projectId]/specs/[specId]/download/route.ts` — `GET`: `getCurrentIdentity()` auth; `canAccessProject` gate; fetches `ProjectSpec` by `specId`, verifies `spec.projectId === projectId`; resolves blob URL via `getDownloadUrl`, fetches and streams content; responds with `Content-Type: text/markdown` and `Content-Disposition: attachment` header.
+  - TypeScript clean.
+
+- Feature 27: Spec Generation Flow
+  - `trigger/generate-spec.ts` — `generateSpec` `schemaTask` with `PayloadSchema` (`projectId`, `roomId`, `chatHistory`, `nodes`, `edges`); uses Gemini `gemini-2.5-flash` via `generateText`; `buildPrompt()` serialises nodes (label + shape) and edges (resolved label → label arrows) plus chat history into a structured prompt; `SYSTEM_PROMPT` instructs Gemini to emit Overview / Architecture Components / Data Flow / Design Decisions / Implementation Notes; `metadata` updated at each stage (starting→30→50→complete); returns `{ spec }` (plain Markdown string); retries 2×.
+  - `app/api/ai/spec/route.ts` — `POST /api/ai/spec`: `getCurrentIdentity()` for auth (includes email for collaborator check); Zod `RequestSchema` validates `roomId`, `chatHistory`, `nodes`, `edges`; `projectId` derived from `roomId` only — client cannot supply it; `canAccessProject(roomId, identity)` gate; triggers `generateSpec`, creates `TaskRun`, issues `publicToken` scoped to run; returns `{ runId, publicToken }`.
+  - `app/api/ai/spec/token/route.ts` — `POST /api/ai/spec/token`: identical ownership/token pattern as design token route; verifies `TaskRun.userId === userId` before issuing scoped read token.
+  - TypeScript clean.
+
+- Feature 29: Spec UI Integration
+  - `react-markdown@10.1.0` installed.
+  - `app/api/projects/[projectId]/specs/route.ts` — `GET`: auth + `canAccessProject` gate; returns `{ id, createdAt, filePath }[]` ordered by `createdAt desc`.
+  - `app/api/projects/[projectId]/specs/[specId]/download/route.ts` — fixed: replaced `getDownloadUrl` + unauthenticated `fetch` with `get(url, { access: "private" })` from `@vercel/blob`; `getDownloadUrl` only appends `?download=1` and has no auth — private blobs require the authenticated `get()` SDK call.
+  - `components/editor/canvas.tsx` — added `getNodesAndEdges()` to `CanvasHandle` interface and `useImperativeHandle`; exposes current `{ nodes, edges }` from `useLiveblocksFlow` for callers outside the canvas.
+  - `components/editor/workspace-shell.tsx` — added `getCanvasData` callback (reads from `canvasRef.current?.getNodesAndEdges()`); passed as prop to `AiSidebar`.
+  - `components/editor/ai-sidebar.tsx` — Specs tab: live spec list (fetches on sidebar open), loading/empty states, click-to-preview (Dialog with `ReactMarkdown`), hover-reveal download per item; Generate Spec button wired end-to-end: calls `POST /api/ai/spec` with canvas nodes/edges + chat history, tracks run via `useRealtimeRun`, refreshes list on `COMPLETED`, shows error on failure; `DialogDescription` added to silence a11y warnings.
+  - TypeScript clean.
 
 ## Next Up
 

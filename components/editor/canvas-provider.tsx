@@ -1,6 +1,7 @@
 "use client"
 
-import { Suspense, type RefObject } from "react"
+import { Suspense, type ReactNode, type RefObject } from "react"
+import { LiveList } from "@liveblocks/client"
 import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblocks/react"
 import { Canvas, type CanvasHandle } from "./canvas"
 import type { SaveStatus } from "@/hooks/use-canvas-autosave"
@@ -9,6 +10,7 @@ interface CanvasProviderProps {
   roomId: string
   canvasRef?: RefObject<CanvasHandle | null> | null
   onSaveStatusChange?: (status: SaveStatus) => void
+  children?: ReactNode
 }
 
 function LoadingCanvas() {
@@ -27,7 +29,7 @@ function CanvasError() {
   )
 }
 
-export function CanvasProvider({ roomId, canvasRef, onSaveStatusChange }: CanvasProviderProps) {
+export function CanvasProvider({ roomId, canvasRef, onSaveStatusChange, children }: CanvasProviderProps) {
   return (
     <LiveblocksProvider
       authEndpoint={async (room) => {
@@ -43,16 +45,18 @@ export function CanvasProvider({ roomId, canvasRef, onSaveStatusChange }: Canvas
       <RoomProvider
         id={roomId}
         initialPresence={{ cursor: null, thinking: false }}
+        initialStorage={{ aiStatusFeed: null, aiChat: new LiveList([]) }}
       >
         <ClientSideSuspense fallback={<LoadingCanvas />}>
           <Suspense fallback={<LoadingCanvas />}>
             <Canvas
-            ref={canvasRef ?? null}
-            projectId={roomId}
-            onSaveStatusChange={onSaveStatusChange ?? (() => {})}
-          />
+              ref={canvasRef ?? null}
+              projectId={roomId}
+              onSaveStatusChange={onSaveStatusChange ?? (() => {})}
+            />
           </Suspense>
         </ClientSideSuspense>
+        {children}
       </RoomProvider>
     </LiveblocksProvider>
   )

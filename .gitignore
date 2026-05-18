@@ -47,3 +47,15 @@ next-env.d.ts
 
 # Claude Code tooling
 .claude/
+
+# Trigger.dev local build artifacts
+.trigger/tmp/
+.trigger/watchdog.pid
+.trigger/dev.lock
+.trigger/active-runs.json
+
+# VSCode
+.vscode/
+
+# MCP config
+.mcp.json
