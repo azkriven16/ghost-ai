@@ -12,6 +12,8 @@ import { useRealtimeRun } from "@trigger.dev/react-hooks"
 import ReactMarkdown from "react-markdown"
 import { AiStatusMessageSchema, ChatMessageSchema, type ChatMessage } from "@/types/tasks"
 import type { CanvasNode, CanvasEdge } from "@/types/canvas"
+import type { designAgent } from "@/trigger/design-agent"
+import type { generateSpec } from "@/trigger/generate-spec"
 
 interface AiSidebarProps {
   isOpen: boolean
@@ -80,12 +82,12 @@ export function AiSidebar({ isOpen, onClose, projectId, roomId, getCanvasData }:
 
   const addMessage = useMutation(
     ({ storage }, msg: ChatMessage) => {
-      storage.get("aiChat").push(msg)
+      storage.get("aiChat")?.push(msg)
     },
     []
   )
 
-  const { run } = useRealtimeRun(runId ?? "", {
+  const { run } = useRealtimeRun<typeof designAgent>(runId ?? "", {
     accessToken: publicToken ?? "",
     enabled: !!runId && !!publicToken,
   })
@@ -135,7 +137,7 @@ export function AiSidebar({ isOpen, onClose, projectId, roomId, getCanvasData }:
     if (isOpen) fetchSpecs()
   }, [isOpen, fetchSpecs])
 
-  const { run: specRun } = useRealtimeRun(specRunId ?? "", {
+  const { run: specRun } = useRealtimeRun<typeof generateSpec>(specRunId ?? "", {
     accessToken: specPublicToken ?? "",
     enabled: !!specRunId && !!specPublicToken,
   })

@@ -94,7 +94,7 @@ export const generateSpec = schemaTask({
   id: "generate-spec",
   schema: PayloadSchema,
   retry: { maxAttempts: 2 },
-  run: async (payload) => {
+  run: async (payload, { ctx }) => {
     const { projectId, roomId, chatHistory, nodes, edges } = payload;
 
     logger.info("Spec generation started", {
@@ -137,7 +137,7 @@ export const generateSpec = schemaTask({
     metadata.set("status", "saving").set("progress", 80);
 
     const blob = await put(
-      `specs/${projectId}/${crypto.randomUUID()}.md`,
+      `specs/${projectId}/${ctx.run.id}.md`,
       spec,
       { access: "private", contentType: "text/markdown; charset=utf-8", addRandomSuffix: false }
     );

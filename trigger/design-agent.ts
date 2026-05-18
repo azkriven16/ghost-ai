@@ -87,7 +87,7 @@ export const designAgent = task({
       }
     }
 
-    logger.info("Design agent started", { prompt, roomId });
+    logger.info("Design agent started", { roomId, promptLength: prompt.length });
     await broadcastStatus("thinking", "Reading your prompt…");
 
     const googleProvider = createGoogleGenerativeAI({

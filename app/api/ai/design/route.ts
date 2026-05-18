@@ -1,11 +1,11 @@
-import { auth } from "@clerk/nextjs/server";
 import { auth as triggerAuth } from "@trigger.dev/sdk";
 import { prisma } from "@/lib/prisma";
+import { getCurrentIdentity, canAccessProject } from "@/lib/project-access";
 import { designAgent } from "@/trigger/design-agent";
 
 export async function POST(request: Request) {
-  const { userId } = await auth();
-  if (!userId) {
+  const identity = await getCurrentIdentity();
+  if (!identity) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -29,10 +29,15 @@ export async function POST(request: Request) {
     );
   }
 
+  const hasAccess = await canAccessProject(projectId, identity);
+  if (!hasAccess) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const handle = await designAgent.trigger({ prompt, roomId });
 
   await prisma.taskRun.create({
-    data: { runId: handle.id, projectId, userId },
+    data: { runId: handle.id, projectId, userId: identity.userId },
   });
 
   const publicToken = await triggerAuth.createPublicToken({
