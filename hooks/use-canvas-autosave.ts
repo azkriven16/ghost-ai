@@ -21,8 +21,10 @@ export function useCanvasAutosave(
   // Stable refs so the manual save callback always sees latest data
   const nodesRef = useRef(nodes)
   const edgesRef = useRef(edges)
-  nodesRef.current = nodes
-  edgesRef.current = edges
+  useEffect(() => {
+    nodesRef.current = nodes
+    edgesRef.current = edges
+  }, [nodes, edges])
 
   const performSave = useCallback(() => {
     if (resetTimerRef.current) clearTimeout(resetTimerRef.current)
@@ -64,5 +66,13 @@ export function useCanvasAutosave(
     }
   }, [])
 
-  return { status, save: performSave }
+  const saveNow = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    performSave()
+  }, [performSave])
+
+  return { status, save: saveNow }
 }

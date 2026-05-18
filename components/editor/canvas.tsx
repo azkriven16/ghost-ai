@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
-import { useRoom, useUpdateMyPresence } from "@liveblocks/react"
+import { useRoom, useUpdateMyPresence, useEventListener } from "@liveblocks/react"
 import {
   ReactFlow,
   Background,
@@ -27,6 +27,7 @@ import "@xyflow/react/dist/style.css"
 export interface CanvasHandle {
   importTemplate: (nodes: CanvasNode[], edges: CanvasEdge[]) => void
   save: () => void
+  getNodesAndEdges: () => { nodes: CanvasNode[]; edges: CanvasEdge[] }
 }
 
 interface CanvasProps {
@@ -77,6 +78,16 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(
       onSaveStatusChange(saveStatus)
     }, [saveStatus, onSaveStatusChange])
 
+    useEventListener(({ event }) => {
+      if (event.type === "AI_NODES_GENERATED") {
+        room.history.pause()
+        onNodesChange(event.nodes.map((n) => ({ type: "add" as const, item: n as CanvasNode })))
+        onEdgesChange(event.edges.map((e) => ({ type: "add" as const, item: e as CanvasEdge })))
+        room.history.resume()
+        setTimeout(() => rfInstance.current?.fitView({ duration: 400 }), 50)
+      }
+    })
+
     // Load saved canvas once on mount if the room is empty
     useEffect(() => {
       if (loadAttemptedRef.current) return
@@ -100,7 +111,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(
           room.history.resume()
           setTimeout(() => rfInstance.current?.fitView({ duration: 400 }), 50)
         })
-        .catch(() => {})
+        .catch((err) => {
+          if (process.env.NODE_ENV === "development") {
+            console.error("Failed to load saved canvas:", err)
+          }
+        })
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -119,6 +134,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(
         setTimeout(() => rfInstance.current?.fitView({ duration: 400 }), 50)
       },
       save: triggerSave,
+      getNodesAndEdges: () => ({ nodes, edges }),
     }), [room, nodes, edges, onNodesChange, onEdgesChange, triggerSave])
 
     const getCanvasCenter = useCallback(() => {
@@ -244,7 +260,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(
 
         onNodesChange([{
           type: "add",
-          item: makeNode(payload.shape, payload.width, payload.height, x + payload.width / 2, y + payload.height / 2),
+          item: makeNode(payload.shape, payload.width, payload.height, x, y),
         }])
       },
       [onNodesChange]

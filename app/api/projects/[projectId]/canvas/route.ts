@@ -86,6 +86,11 @@ export async function GET(_request: Request, { params }: RouteContext) {
     return new Response(null, { status: 204 });
   }
 
-  const canvas = await blobRes.json() as unknown;
+  let canvas: unknown;
+  try {
+    canvas = await blobRes.json();
+  } catch {
+    return new Response(null, { status: 204 });
+  }
   return Response.json(canvas);
 }
