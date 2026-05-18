@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { EditorNavbar } from "./editor-navbar"
 import { ProjectSidebar } from "./project-sidebar"
 import { EditorContext } from "./editor-context"
@@ -11,10 +11,12 @@ import {
   DeleteProjectDialog,
 } from "./project-dialogs"
 import { ShareDialog } from "./share-dialog"
+import { AiSidebar } from "./ai-sidebar"
 import { CanvasProvider } from "./canvas-provider"
 import { StarterTemplatesModal } from "./starter-templates-modal"
 import type { CanvasHandle } from "./canvas"
 import type { CanvasTemplate } from "./starter-templates"
+import type { SaveStatus } from "@/hooks/use-canvas-autosave"
 
 interface WorkspaceShellProps {
   projectId: string
@@ -33,8 +35,10 @@ export function WorkspaceShell({
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle")
 
   const canvasRef = useRef<CanvasHandle>(null)
+  const handleSaveStatusChange = useCallback((s: SaveStatus) => setSaveStatus(s), [])
 
   const {
     createDialog,
@@ -72,6 +76,9 @@ export function WorkspaceShell({
           onToggleAiSidebar={() => setIsAiSidebarOpen((v) => !v)}
           onShare={() => setIsShareOpen(true)}
           onOpenTemplates={() => setIsTemplatesOpen(true)}
+          saveStatus={saveStatus}
+          onSave={() => canvasRef.current?.save()}
+          showUserButton={false}
         />
         <ProjectSidebar
           isOpen={isSidebarOpen}
@@ -84,26 +91,17 @@ export function WorkspaceShell({
         />
         <div className="relative flex flex-1 min-h-0">
           <div className="flex flex-1 min-h-0">
-            <CanvasProvider roomId={projectId} canvasRef={canvasRef} />
+            <CanvasProvider
+              roomId={projectId}
+              canvasRef={canvasRef}
+              onSaveStatusChange={handleSaveStatusChange}
+            />
           </div>
 
-          {/* AI sidebar */}
-          <aside
-            aria-hidden={isAiSidebarOpen ? "false" : "true"}
-            inert={!isAiSidebarOpen || undefined}
-            className={`fixed right-0 top-12 z-40 flex h-[calc(100dvh-3rem)] w-80 flex-col border-l border-surface-border bg-surface/90 backdrop-blur-sm transition-transform duration-200 ease-in-out ${
-              isAiSidebarOpen
-                ? "translate-x-0 pointer-events-auto"
-                : "translate-x-full pointer-events-none"
-            }`}
-          >
-            <div className="flex shrink-0 items-center border-b border-surface-border px-4 py-3">
-              <span className="text-sm font-medium text-copy-primary">AI Assistant</span>
-            </div>
-            <div className="flex flex-1 items-center justify-center">
-              <p className="text-sm text-copy-faint">AI chat coming soon</p>
-            </div>
-          </aside>
+          <AiSidebar
+            isOpen={isAiSidebarOpen}
+            onClose={() => setIsAiSidebarOpen(false)}
+          />
         </div>
       </div>
 

@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Feature 19: TBD
+- Feature 22: TBD
 
 ## Completed
 
@@ -90,7 +90,7 @@ Update this file whenever the current phase, active feature, or implementation s
   - TypeScript clean, production build passes.
 
 - Feature 10: Liveblocks Setup
-  - `liveblocks.config.ts` — `Presence` typed with `cursor: { x, y } | null` and `isThinking: boolean`; `UserMeta.info` typed with `name`, `avatar`, `cursorColor`.
+  - `liveblocks.config.ts` — `Presence` typed with `cursor: { x, y } | null` and `thinking: boolean` (renamed from `isThinking` in Feature 19); `UserMeta.info` typed with `name`, `avatar`, `cursorColor`.
   - `lib/liveblocks.ts` — cached `Liveblocks` node client singleton (throws at startup if `LIVEBLOCKS_SECRET_KEY` missing); `getCursorColor(userId)` deterministically maps user ID hash to one of 10 palette colors.
   - `app/api/liveblocks-auth/route.ts` — `POST`: requires Clerk auth, validates `projectId` body param, verifies project access via `canAccessProject`, ensures room exists via `getOrCreateRoom`, issues session token with user name/avatar/cursor color.
   - `@liveblocks/node@3.19.1` installed.
@@ -151,6 +151,35 @@ Update this file whenever the current phase, active feature, or implementation s
   - `components/editor/editor-navbar.tsx` — `onOpenTemplates?` prop; `LayoutTemplate` icon button added before Share button.
   - `components/editor/workspace-shell.tsx` — `canvasRef = useRef<CanvasHandle>(null)`; `isTemplatesOpen` state; `handleTemplateImport` delegates to `canvasRef.current?.importTemplate`; `StarterTemplatesModal` rendered at root.
   - Build not run (pnpm build denied by user); TypeScript assumed clean based on implementation.
+
+- Feature 19: Presence Avatars & Live Cursors
+  - `liveblocks.config.ts` — renamed `isThinking` → `thinking` in `Presence` type per spec.
+  - `components/editor/canvas-provider.tsx` — updated `initialPresence` to `{ cursor: null, thinking: false }`.
+  - `components/editor/live-cursors.tsx` — renders other participants' cursors as an `absolute inset-0 pointer-events-none` overlay inside `<ReactFlow>`; uses `useOthers` + `useReactFlow().flowToScreenPosition` to convert flow coords to wrapper-relative screen coords; colored SVG pointer + pill name badge per participant color; never shows current user.
+  - `components/editor/presence-avatars.tsx` — React Flow `Panel position="top-right"`; `useOthers` for collaborator list; overlapping avatar stack (max 5 + `+N` overflow chip), each with `ring-2 ring-base` readability ring; divider shown only when collaborators exist; `UserButton` from Clerk always rendered last.
+  - `components/editor/canvas.tsx` — imports `useUpdateMyPresence`; `handleMouseMove` broadcasts cursor in flow coordinates via `rfInstance.screenToFlowPosition`; `handleMouseLeave` sets cursor to null; both wired to wrapper div; `LiveCursors` and `PresenceAvatars` rendered inside `<ReactFlow>` children.
+  - TypeScript clean (build not run).
+
+- Feature 20: AI Sidebar Shell
+  - `components/editor/ai-sidebar.tsx` — extracted from `workspace-shell.tsx` placeholder; preserves existing `fixed right-0 top-12 z-40` floating position, slide-in transition, `border-l border-surface-border bg-base/95 backdrop-blur-sm` surface treatment, and `aria-hidden`/`inert` accessibility attributes.
+  - Header: Bot icon, "AI Workspace" title (`text-copy-primary`), "Collaborate with Ghost AI" subtitle (`text-copy-muted`), close button (`X` icon, `ghost` variant).
+  - shadcn `Tabs` with "AI Architect" and "Specs" tabs; `TabsTrigger` styled `data-[state=active]:bg-subtle data-[state=active]:text-ai-text`; inactive tabs use `text-copy-muted`.
+  - AI Architect tab: scrollable messages area (flex `min-h-0 overflow-y-auto`); empty state with Bot icon, description, and three starter prompt chips (`bg-subtle text-ai-text`); user messages right-aligned (`bg-accent-dim border-2 border-brand/50 text-copy-primary`); assistant messages left-aligned (`bg-elevated border border-surface-border text-ai-text`); auto-resizing textarea (min 72px / max 160px) with `Enter` sends / `Shift+Enter` newline; Send button (`bg-ai text-white`).
+  - Specs tab: "Generate Spec" button (`bg-ai text-white`); demo spec card (`bg-elevated rounded-2xl border-surface-border`) with FileText icon, title, snippet, and disabled Download button.
+  - `components/editor/workspace-shell.tsx` — inline aside replaced with `<AiSidebar isOpen={isAiSidebarOpen} onClose={...} />`.
+  - TypeScript clean (build not run).
+
+- Feature 21: Canvas Autosave
+  - `@vercel/blob@2.3.3` installed.
+  - `prisma/models/project.prisma` — reuses existing `canvasJsonPath String?` field to store Vercel Blob URL; no migration needed.
+  - `app/api/projects/[projectId]/canvas/route.ts` — `PUT`: requires Clerk auth + `canAccessProject`; validates `{ nodes, edges }` body; uploads canvas JSON to Vercel Blob at `canvas/{projectId}.json` (`addRandomSuffix: false` for stable path); updates `project.canvasJsonPath`; returns blob URL. `GET`: requires Clerk auth + `canAccessProject`; reads `canvasJsonPath` from Prisma; fetches and proxies the blob JSON; 204 if no saved canvas.
+  - `hooks/use-canvas-autosave.ts` — `useCanvasAutosave(nodes, edges, projectId)` → `SaveStatus`; skips initial mount via `mountedRef`; debounces 2 s via `timerRef`; returns `"idle" | "saving" | "saved" | "error"`.
+  - `components/editor/canvas.tsx` — accepts `projectId` and `onSaveStatusChange` props; runs `useCanvasAutosave` and forwards status changes; load-on-mount `useEffect`: only runs once, skips if room already has nodes/edges, fetches saved canvas from API and loads via `onNodesChange`/`onEdgesChange` + `fitView`.
+  - `components/editor/canvas-provider.tsx` — accepts `onSaveStatusChange?` prop; passes `projectId={roomId}` and `onSaveStatusChange` to `Canvas`.
+  - `components/editor/workspace-shell.tsx` — holds `saveStatus` state; `handleSaveStatusChange` (stable `useCallback`) passed to `CanvasProvider`; `saveStatus` forwarded to `EditorNavbar`.
+  - `components/editor/editor-navbar.tsx` — `saveStatus?: SaveStatus` prop; `SAVE_LABEL` map (idle→null, saving→"Saving…", saved→"Saved", error→"Save failed"); status text rendered next to project name in center section (`text-copy-faint`, or `text-state-error` on error).
+  - Requires `BLOB_READ_WRITE_TOKEN` in environment.
+  - TypeScript clean (build not run).
 
 ## In Progress
 
